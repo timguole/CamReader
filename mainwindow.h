@@ -2,10 +2,12 @@
 #define MAINWINDOW_H
 
 #include "dialogselectcamera.h"
+#include "videosurface.h"
 
 #include <QMainWindow>
 #include <QCamera>
 #include <QCameraInfo>
+#include <QCameraViewfinder>
 #include <QList>
 
 QT_BEGIN_NAMESPACE
@@ -29,6 +31,7 @@ private:
     Ui::MainWindow *ui;
     QList<QCameraInfo> cameraInfoList;
     QCamera *camera;
+    VideoSurface *vs;
     DialogSelectCamera *dialog;
 };
 #endif // MAINWINDOW_H

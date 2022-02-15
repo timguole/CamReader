@@ -1,5 +1,4 @@
-QT       += core gui
-QT       += multimedia
+QT += core gui multimedia multimediawidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -19,11 +18,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     dialogselectcamera.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    videopreview.cpp \
+    videosurface.cpp
 
 HEADERS += \
     dialogselectcamera.h \
-    mainwindow.h
+    mainwindow.h \
+    videopreview.h \
+    videosurface.h
 
 FORMS += \
     dialogSelectCamera.ui \

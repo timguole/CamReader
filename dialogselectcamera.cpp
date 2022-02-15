@@ -22,9 +22,11 @@ DialogSelectCamera::~DialogSelectCamera()
 
 void DialogSelectCamera::setCameraDevices(QList<QCameraInfo> &cameraInfo)
 {
-    ui->comboboxCameras->addItem("--");
+    ui->comboboxCameras->addItem("(none)");
     for (QCameraInfo ci : cameraInfo) {
-        ui->comboboxCameras->addItem(ci.deviceName());
+        QString deviceName = ci.deviceName()
+                + " (" + ci.description() + ")";
+        ui->comboboxCameras->addItem(deviceName);
     }
 }
 

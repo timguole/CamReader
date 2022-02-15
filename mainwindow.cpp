@@ -6,18 +6,24 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , camera(nullptr)
+    , vs(new VideoSurface)
     , dialog(nullptr)
 {
     ui->setupUi(this);
+    ui->viewfinder->setVideoSurface(vs);
+    QObject::connect(vs, SIGNAL(newFrame()), ui->viewfinder, SLOT(update()));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+
     if (dialog != nullptr) {
         delete dialog;
     }
     if (camera != nullptr) {
+        camera->stop();
+        camera->unload();
         delete camera;
     }
 }
@@ -42,18 +48,14 @@ void MainWindow::setCamera()
     if (index < 1) {
         return;
     }
-    QString deviceName = cameraInfoList.at(index - 1).deviceName();
-    qDebug() << "Selected device: " << deviceName;
-    camera = new QCamera(cameraInfoList.at(index - 1));
-    QCameraViewfinderSettings viewfinderSettings;
-    viewfinderSettings.setResolution(640, 480);
-    viewfinderSettings.setMinimumFrameRate(15.0);
-    viewfinderSettings.setMaximumFrameRate(30.0);
 
-    camera->load();
-    qDebug() << "loaded";
-    QList<QSize> resolutions = camera->supportedViewfinderResolutions(viewfinderSettings);
-    for (QSize r : resolutions) {
-        qDebug() << r.width() << " x " << r.height();
+    if (camera != nullptr) {
+        camera->stop();
+        camera->unload();
+        delete camera;
     }
+    camera = new QCamera(cameraInfoList.at(index - 1));
+    camera->setViewfinder(vs);
+    camera->load();
+    camera->start();
 }
