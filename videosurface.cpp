@@ -4,16 +4,13 @@
 
 VideoSurface::VideoSurface()
     : QAbstractVideoSurface()
-    , image(nullptr)
 {
 
 }
 
 VideoSurface::~VideoSurface()
 {
-    if (image != nullptr) {
-        delete image;
-    }
+
 }
 
 QList<QVideoFrame::PixelFormat> VideoSurface::supportedPixelFormats(
@@ -39,16 +36,28 @@ QList<QVideoFrame::PixelFormat> VideoSurface::supportedPixelFormats(
 bool VideoSurface::present(const QVideoFrame &frame)
 {
     if (frame.isValid()) {
-        qDebug() << frame.pixelFormat();
+        QVideoFrame copyFrame(frame);
+        bool isMapped = copyFrame.map(QAbstractVideoBuffer::ReadOnly);
+        if (!isMapped) {
+            qDebug() << "failed to map frame";
+            stop();
+            return false;
+        }
+        image = QImage(copyFrame.bits(),
+                       copyFrame.width(),
+                       copyFrame.height(),
+                       QVideoFrame::imageFormatFromPixelFormat(copyFrame.pixelFormat()));
+        copyFrame.unmap();
         emit newFrame();
         return true;
     } else {
         qDebug() << "invalid frame";
+        stop();
         return false;
     }
 }
 
-QImage * VideoSurface::getImage()
+QImage VideoSurface::getImage()
 {
     return image;
 }

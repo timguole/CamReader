@@ -15,13 +15,13 @@ public:
     QList<QVideoFrame::PixelFormat> supportedPixelFormats(
             QAbstractVideoBuffer::HandleType type) const;
     bool present(const QVideoFrame &frame);
-    QImage * getImage();
+    QImage getImage();
 
 signals:
     void newFrame();
 
 private:
-    QImage *image;
+    QImage image;
 };
 
 #endif // VIDEOSURFACE_H
