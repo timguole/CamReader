@@ -26,6 +26,9 @@ public:
 
 public slots:
     void setCamera();
+    void onCameraStateChanged(QCamera::State state);
+    void wheelEvent(QWheelEvent *we);
+
 
 private:
     Ui::MainWindow *ui;
@@ -33,5 +36,6 @@ private:
     QCamera *camera;
     VideoSurface *vs;
     DialogSelectCamera *dialog;
+    QCameraFocus *camerafocus;
 };
 #endif // MAINWINDOW_H

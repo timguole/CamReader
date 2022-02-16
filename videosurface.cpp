@@ -51,7 +51,7 @@ bool VideoSurface::present(const QVideoFrame &frame)
         emit newFrame();
         return true;
     } else {
-        qDebug() << "invalid frame";
+        qDebug() << "invalid frame. now stop the surface";
         stop();
         return false;
     }

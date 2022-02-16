@@ -20,6 +20,9 @@
    <property name="autoFillBackground">
     <bool>false</bool>
    </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
   </widget>
  </widget>
  <customwidgets>
