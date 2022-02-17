@@ -25,8 +25,14 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(vs, SIGNAL(newFrame()), ui->viewfinder, SLOT(update()));
 
     addAction(&actCaptureImage);
+    QAction *a1 = new QAction();
+    a1->setSeparator(true);
+    addAction(a1);
     addAction(&actToggleInvertColor);
     addAction(&actToggleScale);
+    QAction *a2 = new QAction();
+    a2->setSeparator(true);
+    addAction(a2);
     addAction(&actExit);
     setContextMenuPolicy(Qt::ActionsContextMenu);
 
