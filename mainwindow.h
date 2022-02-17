@@ -8,6 +8,7 @@
 #include <QCamera>
 #include <QCameraInfo>
 #include <QCameraViewfinder>
+#include <QCameraImageCapture>
 #include <QList>
 #include <QAction>
 
@@ -30,14 +31,18 @@ public slots:
     void onCameraStateChanged(QCamera::State state);
     void wheelEvent(QWheelEvent *we);
     void onExit(bool checked);
+    void saveImage(bool checked);
 
 private:
     Ui::MainWindow *ui;
     QList<QCameraInfo> cameraInfoList;
     QCamera *camera;
+    QCameraImageCapture *imageCapture;
     VideoSurface *vs;
     DialogSelectCamera *dialog;
     QCameraFocus *camerafocus;
+
+    QAction actCaptureImage;
     QAction actToggleInvertColor;
     QAction actToggleScale;
     QAction actExit;

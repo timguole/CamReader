@@ -3,14 +3,19 @@
 #include "ui_dialogSelectCamera.h"
 
 #include <QMessageBox>
+#include <QDateTime>
+#include <QProcessEnvironment>
+#include <QDir>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , camera(nullptr)
+    , imageCapture(nullptr)
     , vs(new VideoSurface)
     , dialog(nullptr)
     , camerafocus(nullptr)
+    , actCaptureImage("Capture image")
     , actToggleInvertColor("Toggle invert color")
     , actToggleScale("Toggle scale frame")
     , actExit("Exit")
@@ -19,11 +24,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->viewfinder->setVideoSurface(vs);
     QObject::connect(vs, SIGNAL(newFrame()), ui->viewfinder, SLOT(update()));
 
+    addAction(&actCaptureImage);
     addAction(&actToggleInvertColor);
     addAction(&actToggleScale);
     addAction(&actExit);
     setContextMenuPolicy(Qt::ActionsContextMenu);
 
+    QObject::connect(&actCaptureImage, SIGNAL(triggered(bool)),
+                     this, SLOT(saveImage(bool)));
     QObject::connect(&actToggleInvertColor, SIGNAL(triggered(bool)),
                      ui->viewfinder, SLOT(toggleInvertColor(bool)));
     QObject::connect(&actToggleScale, SIGNAL(triggered(bool)),
@@ -39,11 +47,15 @@ MainWindow::~MainWindow()
     if (dialog != nullptr) {
         delete dialog;
     }
+    if (imageCapture != nullptr) {
+        delete imageCapture;
+    }
     if (camera != nullptr) {
         camera->stop();
         camera->unload();
         delete camera;
     }
+    delete vs;
 }
 
 void MainWindow::selectCamera()
@@ -75,6 +87,9 @@ void MainWindow::setCamera()
     camera = new QCamera(cameraInfoList.at(index - 1));
     QObject::connect(camera, SIGNAL(stateChanged(QCamera::State)),
                      this, SLOT(onCameraStateChanged(QCamera::State)));
+
+    imageCapture = new QCameraImageCapture(camera);
+    camera->setCaptureMode(QCamera::CaptureStillImage);
     camera->setViewfinder(vs);
     camera->load();
     camera->start();
@@ -125,4 +140,16 @@ void MainWindow::onExit(bool checked)
         qDebug() << "quit program";
        QApplication::quit();
     }
+}
+
+void MainWindow::saveImage(bool checked)
+{
+    qDebug() << "action checked: " << checked;
+    QProcessEnvironment pe = QProcessEnvironment::systemEnvironment();
+    QString homeEnv = pe.value("HOME", "./");
+    QDir homeDir(homeEnv);
+    QDateTime now = QDateTime::currentDateTime();
+    QString nowString = now.toString("yyyy-MM-dd_hh-mm-ss");
+    QString filename = homeDir.absoluteFilePath(nowString + ".jpg");
+    imageCapture->capture(filename);
 }
