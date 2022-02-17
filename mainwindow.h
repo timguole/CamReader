@@ -9,6 +9,7 @@
 #include <QCameraInfo>
 #include <QCameraViewfinder>
 #include <QList>
+#include <QAction>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -28,7 +29,7 @@ public slots:
     void setCamera();
     void onCameraStateChanged(QCamera::State state);
     void wheelEvent(QWheelEvent *we);
-
+    void onExit(bool checked);
 
 private:
     Ui::MainWindow *ui;
@@ -37,5 +38,8 @@ private:
     VideoSurface *vs;
     DialogSelectCamera *dialog;
     QCameraFocus *camerafocus;
+    QAction actToggleInvertColor;
+    QAction actToggleScale;
+    QAction actExit;
 };
 #endif // MAINWINDOW_H

@@ -12,8 +12,14 @@ public:
     void paintEvent(QPaintEvent *event);
     void setVideoSurface(VideoSurface *vs);
 
+public slots:
+    void toggleInvertColor(bool);
+    void toggleScale(bool);
+
 private:
     VideoSurface *vsurface;
+    volatile bool isInvertColor;
+    volatile bool isScaleImage;
 };
 
 #endif // VIDEOPREVIEW_H

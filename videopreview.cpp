@@ -5,6 +5,8 @@
 VideoPreview::VideoPreview(QWidget *parent)
     : QWidget(parent)
     , vsurface(nullptr)
+    , isInvertColor(false)
+    , isScaleImage(true)
 {
 
 }
@@ -18,7 +20,9 @@ void VideoPreview::paintEvent(QPaintEvent *event)
         qDebug() << "image is null";
         return;
     }
-    image.invertPixels();
+    if (isInvertColor) {
+        image.invertPixels();
+    }
 
     // Scale image to widget size
     QImage scaledImage;
@@ -27,8 +31,8 @@ void VideoPreview::paintEvent(QPaintEvent *event)
     int x = 0;
     int y = 0;
 
-    if ((image.width() != ww)
-            || (image.height() != wh)) {
+    if (isScaleImage && ((image.width() != ww)
+            || (image.height() != wh))) {
         scaledImage = image.scaled(size(), Qt::KeepAspectRatio);
         int iw = scaledImage.width();
         int ih = scaledImage.height();
@@ -47,4 +51,16 @@ void VideoPreview::paintEvent(QPaintEvent *event)
 void VideoPreview::setVideoSurface(VideoSurface *vs)
 {
     vsurface = vs;
+}
+
+void VideoPreview::toggleInvertColor(bool checked)
+{
+    qDebug() << "action checked: " << checked;
+    isInvertColor = !isInvertColor;
+}
+
+void VideoPreview::toggleScale(bool checked)
+{
+    qDebug() << "action checked: " << checked;
+    isScaleImage = !isScaleImage;
 }
