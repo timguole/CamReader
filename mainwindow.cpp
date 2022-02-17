@@ -24,15 +24,19 @@ MainWindow::MainWindow(QWidget *parent)
     ui->viewfinder->setVideoSurface(vs);
     QObject::connect(vs, SIGNAL(newFrame()), ui->viewfinder, SLOT(update()));
 
+    actCaptureImage.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Space));
     addAction(&actCaptureImage);
     QAction *a1 = new QAction();
     a1->setSeparator(true);
     addAction(a1);
+    actToggleInvertColor.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
     addAction(&actToggleInvertColor);
+    actToggleScale.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
     addAction(&actToggleScale);
     QAction *a2 = new QAction();
     a2->setSeparator(true);
     addAction(a2);
+    actExit.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     addAction(&actExit);
     setContextMenuPolicy(Qt::ActionsContextMenu);
 
