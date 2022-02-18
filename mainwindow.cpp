@@ -78,11 +78,13 @@ MainWindow::~MainWindow()
     delete ui;
     if (imageCapture != nullptr) {
         delete imageCapture;
+        imageCapture = nullptr;
     }
     if (camera != nullptr) {
         camera->stop();
         camera->unload();
         delete camera;
+        camera = nullptr;
     }
     delete vs;
 }
@@ -137,6 +139,14 @@ void MainWindow::onCameraStateChanged(QCamera::State state)
         camerafocus = camera->focus();
         qDebug() << "max digital zoom: " << camerafocus->maximumDigitalZoom();
         qDebug() << "max optical zoom: " << camerafocus->maximumOpticalZoom();
+
+        if (imageCapture != nullptr) {
+            QList<QSize> rs = imageCapture->supportedResolutions();
+            qDebug() << "supported resolutions:";
+            for (QSize r : rs) {
+                qDebug() << r;
+            }
+        }
     }
 }
 
