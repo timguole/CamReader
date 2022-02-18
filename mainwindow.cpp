@@ -13,50 +13,69 @@ MainWindow::MainWindow(QWidget *parent)
     , camera(nullptr)
     , imageCapture(nullptr)
     , vs(new VideoSurface)
-    , dialog(nullptr)
     , camerafocus(nullptr)
     , actCaptureImage("Capture image")
     , actToggleInvertColor("Toggle invert color")
     , actToggleScale("Toggle scale frame")
+    , actSelectCamera("Change camera")
     , actExit("Exit")
 {
     ui->setupUi(this);
     ui->viewfinder->setVideoSurface(vs);
     QObject::connect(vs, SIGNAL(newFrame()), ui->viewfinder, SLOT(update()));
 
+    dialog = new DialogSelectCamera(this);
+    QObject::connect(dialog, SIGNAL(accepted()), this, SLOT(setCamera()));
+
+    // action: capture image
     actCaptureImage.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Space));
     addAction(&actCaptureImage);
+    QObject::connect(&actCaptureImage, SIGNAL(triggered(bool)),
+                     this, SLOT(saveImage(bool)));
+
     QAction *a1 = new QAction();
     a1->setSeparator(true);
     addAction(a1);
+
+    // action: toggle invert color
     actToggleInvertColor.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
     addAction(&actToggleInvertColor);
+    QObject::connect(&actToggleInvertColor, SIGNAL(triggered(bool)),
+                     ui->viewfinder, SLOT(toggleInvertColor(bool)));
+
+    // action: toggle scale previewing image
     actToggleScale.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
     addAction(&actToggleScale);
+    QObject::connect(&actToggleScale, SIGNAL(triggered(bool)),
+                     ui->viewfinder, SLOT(toggleScale(bool)));
+
     QAction *a2 = new QAction();
     a2->setSeparator(true);
     addAction(a2);
+
+    // action: select camera
+    actSelectCamera.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_N));
+    addAction(&actSelectCamera);
+    QObject::connect(&actSelectCamera, SIGNAL(triggered(bool)),
+                     this, SLOT(selectCamera(bool)));
+
+    QAction *a3 = new QAction();
+    a3->setSeparator(true);
+    addAction(a3);
+
+    // action: exit
     actExit.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     addAction(&actExit);
-    setContextMenuPolicy(Qt::ActionsContextMenu);
-
-    QObject::connect(&actCaptureImage, SIGNAL(triggered(bool)),
-                     this, SLOT(saveImage(bool)));
-    QObject::connect(&actToggleInvertColor, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleInvertColor(bool)));
-    QObject::connect(&actToggleScale, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleScale(bool)));
     QObject::connect(&actExit, SIGNAL(triggered(bool)),
                      this, SLOT(onExit(bool)));
+
+    setContextMenuPolicy(Qt::ActionsContextMenu);
 }
 
 MainWindow::~MainWindow()
 {
+    delete dialog;
     delete ui;
-
-    if (dialog != nullptr) {
-        delete dialog;
-    }
     if (imageCapture != nullptr) {
         delete imageCapture;
     }
@@ -68,16 +87,18 @@ MainWindow::~MainWindow()
     delete vs;
 }
 
-void MainWindow::selectCamera()
+void MainWindow::selectCamera(bool checked)
 {
+    qDebug() << "action checked: " << checked;
+
+    // Each time this dialog is launched,
+    // we should query the latest camera list on system.
     cameraInfoList = QCameraInfo::availableCameras();
     for (QCameraInfo ci : cameraInfoList) {
         qDebug() << "Found device: " << ci.deviceName();
     }
 
-    dialog = new DialogSelectCamera(this);
     dialog->setCameraDevices(cameraInfoList);
-    QObject::connect(dialog, SIGNAL(accepted()), this, SLOT(setCamera()));
     dialog->open();
 }
 
@@ -90,6 +111,7 @@ void MainWindow::setCamera()
     }
 
     if (camera != nullptr) {
+        qDebug() << "delete old camera";
         camera->stop();
         camera->unload();
         delete camera;
@@ -98,6 +120,10 @@ void MainWindow::setCamera()
     QObject::connect(camera, SIGNAL(stateChanged(QCamera::State)),
                      this, SLOT(onCameraStateChanged(QCamera::State)));
 
+    if (imageCapture != nullptr) {
+        qDebug() << "delete old imagecapture";
+        delete imageCapture;
+    }
     imageCapture = new QCameraImageCapture(camera);
     camera->setCaptureMode(QCamera::CaptureStillImage);
     camera->setViewfinder(vs);
@@ -162,4 +188,8 @@ void MainWindow::saveImage(bool checked)
     QString nowString = now.toString("yyyy-MM-dd_hh-mm-ss");
     QString filename = homeDir.absoluteFilePath(nowString + ".jpg");
     imageCapture->capture(filename);
+
+    QMessageBox::information(this, "Capture & save image",
+        "Image file saved to:\n" + filename,
+        QMessageBox::Ok);
 }

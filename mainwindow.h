@@ -24,9 +24,8 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void selectCamera();
-
 public slots:
+    void selectCamera(bool checked = false);
     void setCamera();
     void onCameraStateChanged(QCamera::State state);
     void wheelEvent(QWheelEvent *we);
@@ -45,6 +44,7 @@ private:
     QAction actCaptureImage;
     QAction actToggleInvertColor;
     QAction actToggleScale;
+    QAction actSelectCamera;
     QAction actExit;
 };
 #endif // MAINWINDOW_H
