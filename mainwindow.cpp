@@ -157,20 +157,31 @@ void MainWindow::wheelEvent(QWheelEvent *we)
     qreal zoomOptical;
     qreal currentDigitalZoom = camerafocus->digitalZoom();
     qreal currentOpticalZoom = camerafocus->opticalZoom();
+    int y = rotation.y();
 
-
-    zoomDigital = rotation.y() < 0
+    zoomDigital = y < 0
             ? currentDigitalZoom - 0.25 : currentDigitalZoom + 0.25;
-    zoomOptical = rotation.y() < 0
+    zoomOptical = y < 0
             ? currentOpticalZoom - 0.25 : currentOpticalZoom + 0.25;
 
-    // We prefer optical zoom to digital zoom
-    if ((zoomOptical >= 1.0)
-            && (zoomOptical <= camerafocus->maximumOpticalZoom())) {
-        camerafocus->zoomTo(zoomOptical, 1.0);
-    } else if ((zoomDigital >= 1.0)
-            && (zoomDigital <= camerafocus->maximumDigitalZoom())) {
-        camerafocus->zoomTo(1.0, zoomDigital);
+    // when zoom in, we prefer optical zoom to digital zoom
+    // when zoom out, we prefer digital zoom to optical zoom
+    if (y < 0) {
+        if ((zoomDigital >= 1.0)
+                        && (zoomDigital <= camerafocus->maximumDigitalZoom())) {
+                    camerafocus->zoomTo(1.0, zoomDigital);
+        } else if ((zoomOptical >= 1.0)
+                && (zoomOptical <= camerafocus->maximumOpticalZoom())) {
+            camerafocus->zoomTo(zoomOptical, 1.0);
+        }
+    } else {
+        if ((zoomOptical >= 1.0)
+                && (zoomOptical <= camerafocus->maximumOpticalZoom())) {
+            camerafocus->zoomTo(zoomOptical, 1.0);
+        } else if ((zoomDigital >= 1.0)
+                && (zoomDigital <= camerafocus->maximumDigitalZoom())) {
+            camerafocus->zoomTo(1.0, zoomDigital);
+        }
     }
     qDebug() << "optical zoom: " << camerafocus->opticalZoom();
     qDebug() << "digital zoom: " << camerafocus->digitalZoom();
