@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "dialogselectcamera.h"
+#include "dialogsetbbthreshold.h"
 #include "videosurface.h"
 
 #include <QMainWindow>
@@ -26,11 +27,13 @@ public:
 
 public slots:
     void selectCamera(bool checked = false);
+    void setBBThreshold(bool checked = false);
     void setCamera();
     void onCameraStateChanged(QCamera::State state);
     void wheelEvent(QWheelEvent *we);
     void onExit(bool checked);
     void saveImage(bool checked);
+    void setBBThreshold(int t);
 
 private:
     Ui::MainWindow *ui;
@@ -40,10 +43,13 @@ private:
     VideoSurface *vs;
     DialogSelectCamera *dialog;
     QCameraFocus *camerafocus;
+    DialogSetBBThreshold *dialogSetBBT;
 
     QAction actCaptureImage;
     QAction actToggleInvertColor;
     QAction actToggleScale;
+    QAction actToggleBB;
+    QAction actSetBBThreshold;
     QAction actSelectCamera;
     QAction actExit;
 };

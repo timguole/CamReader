@@ -7,6 +7,8 @@ VideoPreview::VideoPreview(QWidget *parent)
     , vsurface(nullptr)
     , isInvertColor(false)
     , isScaleImage(true)
+    , isBloackBoard(false)
+    , blackboardThreshold(100)
 {
 
 }
@@ -23,7 +25,13 @@ void VideoPreview::paintEvent(QPaintEvent *event)
     if (isInvertColor) {
         image.invertPixels();
     }
-
+    if (isBloackBoard) {
+        if (image.format() == QImage::Format_RGB888) {
+            blackboardRgb(image);
+        } else if (image.format() == QImage::Format_ARGB32) {
+            blackboardRgba(image);
+        }
+    }
     // Scale image to widget size
     QImage scaledImage;
     int ww = width();
@@ -48,6 +56,11 @@ void VideoPreview::paintEvent(QPaintEvent *event)
     painter.drawImage(x, y, scaledImage);
 }
 
+int VideoPreview::getBBThreshold()
+{
+    return blackboardThreshold;
+}
+
 void VideoPreview::setVideoSurface(VideoSurface *vs)
 {
     vsurface = vs;
@@ -63,4 +76,53 @@ void VideoPreview::toggleScale(bool checked)
 {
     qDebug() << "action checked: " << checked;
     isScaleImage = !isScaleImage;
+}
+
+void VideoPreview::toggleBlackboard(bool checked)
+{
+    qDebug() << "action checked: " << checked;
+    isBloackBoard = !isBloackBoard;
+}
+
+void VideoPreview::setBBThreshold(int t)
+{
+    blackboardThreshold = t;
+}
+
+void VideoPreview::blackboardRgba(QImage &image)
+{
+    int h = image.height();
+    int w = image.width();
+    QRgb black = qRgb(0, 0, 0);
+
+    for (int i = 0; i < h; i++) {
+        QRgb *line = (QRgb *)image.scanLine(i);
+        for (int j = 0; j < w; j++) {
+            if (qRed(line[j]) < blackboardThreshold
+                    && qGreen(line[j]) < blackboardThreshold
+                    && qBlue(line[j]) < blackboardThreshold) {
+                line[j] = black;
+            }
+
+        }
+    }
+}
+
+void VideoPreview::blackboardRgb(QImage &image)
+{
+    int h = image.height();
+    int w = image.width();
+    for (int i = 0; i < h; i++) {
+        uchar *line = image.scanLine(i);
+        for (int j = 0; j < w*3; j+=3) {
+            if (line[j] < blackboardThreshold
+                    && line[j+1] < blackboardThreshold
+                    && line[j+2] < blackboardThreshold) {
+                line[j] = 0;
+                line[j+1] = 0;
+                line[j+2] = 0;
+            }
+
+        }
+    }
 }

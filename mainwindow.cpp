@@ -15,8 +15,10 @@ MainWindow::MainWindow(QWidget *parent)
     , vs(new VideoSurface)
     , camerafocus(nullptr)
     , actCaptureImage("Capture image")
-    , actToggleInvertColor("Toggle invert color")
+    , actToggleInvertColor("Toggle invert color mode")
     , actToggleScale("Toggle scale frame")
+    , actToggleBB("Toggle blackboard mode")
+    , actSetBBThreshold("Adjust BB Threshold")
     , actSelectCamera("Change camera")
     , actExit("Exit")
 {
@@ -26,6 +28,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     dialog = new DialogSelectCamera(this);
     QObject::connect(dialog, SIGNAL(accepted()), this, SLOT(setCamera()));
+
+    dialogSetBBT = new DialogSetBBThreshold(this);
+    dialogSetBBT->setCurrentThreshold(ui->viewfinder->getBBThreshold());
+    QObject::connect(dialogSetBBT, SIGNAL(valueChanged(int)),
+                     this, SLOT(setBBThreshold(int)));
 
     // action: capture image
     actCaptureImage.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Space));
@@ -48,6 +55,19 @@ MainWindow::MainWindow(QWidget *parent)
     addAction(&actToggleScale);
     QObject::connect(&actToggleScale, SIGNAL(triggered(bool)),
                      ui->viewfinder, SLOT(toggleScale(bool)));
+
+    // action: toggle blackboard
+    actToggleBB.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_B));
+    addAction(&actToggleBB);
+    QObject::connect(&actToggleBB, SIGNAL(triggered(bool)),
+                     ui->viewfinder, SLOT(toggleBlackboard(bool)));
+
+    // action: set blackboard threshold
+    actSetBBThreshold.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
+    addAction(&actSetBBThreshold);
+    QObject::connect(&actSetBBThreshold, SIGNAL(triggered(bool)),
+                     this, SLOT(setBBThreshold(bool)));
+
 
     QAction *a2 = new QAction();
     a2->setSeparator(true);
@@ -75,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete dialog;
+    delete dialogSetBBT;
     delete ui;
     if (imageCapture != nullptr) {
         delete imageCapture;
@@ -102,6 +123,13 @@ void MainWindow::selectCamera(bool checked)
 
     dialog->setCameraDevices(cameraInfoList);
     dialog->open();
+}
+
+void MainWindow::setBBThreshold(bool checked)
+{
+    qDebug() << "action checked: " << checked;
+    dialogSetBBT->setCurrentThreshold(ui->viewfinder->getBBThreshold());
+    dialogSetBBT->open();
 }
 
 void MainWindow::setCamera()
@@ -213,4 +241,9 @@ void MainWindow::saveImage(bool checked)
     QMessageBox::information(this, "Capture & save image",
         "Image file saved to:\n" + filename,
         QMessageBox::Ok);
+}
+
+void MainWindow::setBBThreshold(int t)
+{
+    ui->viewfinder->setBBThreshold(t);
 }

@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     dialogselectcamera.cpp \
+    dialogsetbbthreshold.cpp \
     main.cpp \
     mainwindow.cpp \
     videopreview.cpp \
@@ -24,12 +25,14 @@ SOURCES += \
 
 HEADERS += \
     dialogselectcamera.h \
+    dialogsetbbthreshold.h \
     mainwindow.h \
     videopreview.h \
     videosurface.h
 
 FORMS += \
     dialogSelectCamera.ui \
+    dialogSetBBThreshold.ui \
     mainwindow.ui
 
 # Default rules for deployment.
