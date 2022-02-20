@@ -1,19 +1,17 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "ui_dialogSelectCamera.h"
 
 #include <QMessageBox>
 #include <QDateTime>
 #include <QProcessEnvironment>
 #include <QDir>
+#include <opencv2/core/hal/interface.h>
+#include <opencv2/imgproc.hpp>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , camera(nullptr)
-    , imageCapture(nullptr)
-    , vs(new VideoSurface)
-    , camerafocus(nullptr)
+    , videocapture(nullptr)
     , actCaptureImage("Capture image")
     , actToggleInvertColor("Toggle invert color mode")
     , actToggleScale("Toggle scale frame")
@@ -23,8 +21,6 @@ MainWindow::MainWindow(QWidget *parent)
     , actExit("Exit")
 {
     ui->setupUi(this);
-    ui->viewfinder->setVideoSurface(vs);
-    QObject::connect(vs, SIGNAL(newFrame()), ui->viewfinder, SLOT(update()));
 
     dialog = new DialogSelectCamera(this);
     QObject::connect(dialog, SIGNAL(accepted()), this, SLOT(setCamera()));
@@ -90,6 +86,9 @@ MainWindow::MainWindow(QWidget *parent)
                      this, SLOT(onExit(bool)));
 
     setContextMenuPolicy(Qt::ActionsContextMenu);
+
+    timer.setInterval(200);
+    QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(grabFrame()));
 }
 
 MainWindow::~MainWindow()
@@ -97,23 +96,16 @@ MainWindow::~MainWindow()
     delete dialog;
     delete dialogSetBBT;
     delete ui;
-    if (imageCapture != nullptr) {
-        delete imageCapture;
-        imageCapture = nullptr;
+
+    if (videocapture != nullptr) {
+        videocapture->release();
+        delete videocapture;
+        videocapture = nullptr;
     }
-    if (camera != nullptr) {
-        camera->stop();
-        camera->unload();
-        delete camera;
-        camera = nullptr;
-    }
-    delete vs;
 }
 
 void MainWindow::selectCamera(bool checked)
 {
-    qDebug() << "action checked: " << checked;
-
     // Each time this dialog is launched,
     // we should query the latest camera list on system.
     cameraInfoList = QCameraInfo::availableCameras();
@@ -127,7 +119,6 @@ void MainWindow::selectCamera(bool checked)
 
 void MainWindow::setBBThreshold(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     dialogSetBBT->setCurrentThreshold(ui->viewfinder->getBBThreshold());
     dialogSetBBT->open();
 }
@@ -139,87 +130,41 @@ void MainWindow::setCamera()
     if (index < 1) {
         return;
     }
+    timer.stop();
 
-    if (camera != nullptr) {
+    if (videocapture != nullptr) {
         qDebug() << "delete old camera";
-        camera->stop();
-        camera->unload();
-        delete camera;
+        videocapture->release();
+        delete videocapture;
+        videocapture = nullptr;
     }
-    camera = new QCamera(cameraInfoList.at(index - 1));
-    QObject::connect(camera, SIGNAL(stateChanged(QCamera::State)),
-                     this, SLOT(onCameraStateChanged(QCamera::State)));
-
-    if (imageCapture != nullptr) {
-        qDebug() << "delete old imagecapture";
-        delete imageCapture;
+    QString devname = cameraInfoList.at(index - 1).deviceName();
+    int cameraid = devname.at(devname.size() - 1).digitValue();
+    qDebug() << "camera id:" << cameraid;
+    videocapture = new cv::VideoCapture();
+    videocapture->open(cameraid);
+    if (!videocapture->isOpened()) {
+        qDebug() << "failed to open videocapture";
+        return;
     }
-    imageCapture = new QCameraImageCapture(camera);
-    camera->setCaptureMode(QCamera::CaptureStillImage);
-    camera->setViewfinder(vs);
-    camera->load();
-    camera->start();
-}
-
-void MainWindow::onCameraStateChanged(QCamera::State state)
-{
-    if (state == QCamera::LoadedState) {
-        camerafocus = camera->focus();
-        qDebug() << "max digital zoom: " << camerafocus->maximumDigitalZoom();
-        qDebug() << "max optical zoom: " << camerafocus->maximumOpticalZoom();
-
-        if (imageCapture != nullptr) {
-            QList<QSize> rs = imageCapture->supportedResolutions();
-            qDebug() << "supported resolutions:";
-            for (QSize r : rs) {
-                qDebug() << r;
-            }
-        }
-    }
+    double h = videocapture->get(cv::CAP_PROP_FRAME_HEIGHT);
+    double w = videocapture->get(cv::CAP_PROP_FRAME_WIDTH);
+    qDebug() << "default resolution: " << w << " " << h;
+    //videocapture->set(cv::CAP_PROP_FRAME_HEIGHT, 10000);
+    //videocapture->set(cv::CAP_PROP_FRAME_WIDTH, 10000);
+    //h = videocapture->get(cv::CAP_PROP_FRAME_HEIGHT);
+    //w = videocapture->get(cv::CAP_PROP_FRAME_WIDTH);
+    //qDebug() << "max resolution: " << w << " " << h;
+    timer.start();
 }
 
 void MainWindow::wheelEvent(QWheelEvent *we)
 {
-    QPoint rotation = we->angleDelta();
-    qreal zoomDigital;
-    qreal zoomOptical;
-    qreal currentDigitalZoom = camerafocus->digitalZoom();
-    qreal currentOpticalZoom = camerafocus->opticalZoom();
-    int y = rotation.y();
-
-    zoomDigital = y < 0
-            ? currentDigitalZoom - 0.25 : currentDigitalZoom + 0.25;
-    zoomOptical = y < 0
-            ? currentOpticalZoom - 0.25 : currentOpticalZoom + 0.25;
-
-    // when zoom in, we prefer optical zoom to digital zoom
-    // when zoom out, we prefer digital zoom to optical zoom
-    if (y < 0) {
-        if ((zoomDigital >= 1.0)
-                        && (zoomDigital <= camerafocus->maximumDigitalZoom())) {
-                    camerafocus->zoomTo(1.0, zoomDigital);
-        } else if ((zoomOptical >= 1.0)
-                && (zoomOptical <= camerafocus->maximumOpticalZoom())) {
-            camerafocus->zoomTo(zoomOptical, 1.0);
-        }
-    } else {
-        if ((zoomOptical >= 1.0)
-                && (zoomOptical <= camerafocus->maximumOpticalZoom())) {
-            camerafocus->zoomTo(zoomOptical, 1.0);
-        } else if ((zoomDigital >= 1.0)
-                && (zoomDigital <= camerafocus->maximumDigitalZoom())) {
-            camerafocus->zoomTo(1.0, zoomDigital);
-        }
-    }
-    qDebug() << "optical zoom: " << camerafocus->opticalZoom();
-    qDebug() << "digital zoom: " << camerafocus->digitalZoom();
-
     we->accept();
 }
 
 void MainWindow::onExit(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     if (QMessageBox::Ok == QMessageBox::information(this, "Exit",
             "Do you really want to exit?", QMessageBox::Ok, QMessageBox::Cancel)) {
         qDebug() << "quit program";
@@ -229,15 +174,20 @@ void MainWindow::onExit(bool checked)
 
 void MainWindow::saveImage(bool checked)
 {
-    qDebug() << "action checked: " << checked;
+    if (source_image.isNull()) {
+        QMessageBox::warning(this, "Failed to save image",
+            "Image data is null",
+            QMessageBox::Ok);
+        return;
+    }
     QProcessEnvironment pe = QProcessEnvironment::systemEnvironment();
     QString homeEnv = pe.value("HOME", "./");
     QDir homeDir(homeEnv);
     QDateTime now = QDateTime::currentDateTime();
     QString nowString = now.toString("yyyy-MM-dd_hh-mm-ss");
     QString filename = homeDir.absoluteFilePath(nowString + ".jpg");
-    imageCapture->capture(filename);
-
+    qDebug() << "file name:" << filename;
+    source_image.save(filename);
     QMessageBox::information(this, "Capture & save image",
         "Image file saved to:\n" + filename,
         QMessageBox::Ok);
@@ -246,4 +196,28 @@ void MainWindow::saveImage(bool checked)
 void MainWindow::setBBThreshold(int t)
 {
     ui->viewfinder->setBBThreshold(t);
+}
+
+void MainWindow::grabFrame()
+{
+    if (videocapture == nullptr) {
+        return;
+    }
+    videocapture->read(source_frame);
+    if (source_frame.empty()) {
+        qDebug() << "source frame is empty";
+        return;
+    }
+    if (source_frame.type() != CV_8UC3) {
+        qDebug() << "mat type is not CV_8UC3";
+        return;
+    }
+    cv::cvtColor(source_frame, rgb_frame, cv::COLOR_BGR2RGB);
+    QImage i(rgb_frame.data,
+             rgb_frame.cols,
+             rgb_frame.rows,
+             QImage::Format_RGB888);
+    source_image = i;
+    ui->viewfinder->setFrame(source_image);
+    ui->viewfinder->update();
 }

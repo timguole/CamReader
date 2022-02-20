@@ -4,7 +4,6 @@
 
 VideoPreview::VideoPreview(QWidget *parent)
     : QWidget(parent)
-    , vsurface(nullptr)
     , isInvertColor(false)
     , isScaleImage(true)
     , isBloackBoard(false)
@@ -16,7 +15,6 @@ VideoPreview::VideoPreview(QWidget *parent)
 void VideoPreview::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
-    QImage image = vsurface->getImage();
 
     if (image.isNull()) {
         qDebug() << "image is null";
@@ -61,14 +59,8 @@ int VideoPreview::getBBThreshold()
     return blackboardThreshold;
 }
 
-void VideoPreview::setVideoSurface(VideoSurface *vs)
-{
-    vsurface = vs;
-}
-
 void VideoPreview::toggleInvertColor(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     isInvertColor = !isInvertColor;
 }
 
@@ -87,6 +79,11 @@ void VideoPreview::toggleBlackboard(bool checked)
 void VideoPreview::setBBThreshold(int t)
 {
     blackboardThreshold = t;
+}
+
+void VideoPreview::setFrame(QImage &i)
+{
+    image = i;
 }
 
 void VideoPreview::blackboardRgba(QImage &image)

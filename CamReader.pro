@@ -20,15 +20,17 @@ SOURCES += \
     dialogsetbbthreshold.cpp \
     main.cpp \
     mainwindow.cpp \
-    videopreview.cpp \
-    videosurface.cpp
+    videopreview.cpp
 
 HEADERS += \
     dialogselectcamera.h \
     dialogsetbbthreshold.h \
     mainwindow.h \
-    videopreview.h \
-    videosurface.h
+    videopreview.h
+
+LIBS += /usr/lib/x86_64-linux-gnu/libopencv_core.so.4.2.0 \
+        /usr/lib/x86_64-linux-gnu/libopencv_videoio.so.4.2.0 \
+        /usr/lib/x86_64-linux-gnu/libopencv_imgproc.so.4.2.0
 
 FORMS += \
     dialogSelectCamera.ui \

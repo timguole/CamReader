@@ -3,15 +3,16 @@
 
 #include "dialogselectcamera.h"
 #include "dialogsetbbthreshold.h"
-#include "videosurface.h"
 
 #include <QMainWindow>
-#include <QCamera>
 #include <QCameraInfo>
-#include <QCameraViewfinder>
-#include <QCameraImageCapture>
 #include <QList>
 #include <QAction>
+#include <QTimer>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/videoio.hpp>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -29,21 +30,22 @@ public slots:
     void selectCamera(bool checked = false);
     void setBBThreshold(bool checked = false);
     void setCamera();
-    void onCameraStateChanged(QCamera::State state);
     void wheelEvent(QWheelEvent *we);
     void onExit(bool checked);
     void saveImage(bool checked);
     void setBBThreshold(int t);
+    void grabFrame();
 
 private:
     Ui::MainWindow *ui;
     QList<QCameraInfo> cameraInfoList;
-    QCamera *camera;
-    QCameraImageCapture *imageCapture;
-    VideoSurface *vs;
+    cv::VideoCapture *videocapture;
+    cv::Mat source_frame;
+    cv::Mat rgb_frame;
+    QImage source_image;
     DialogSelectCamera *dialog;
-    QCameraFocus *camerafocus;
     DialogSetBBThreshold *dialogSetBBT;
+    QTimer timer;
 
     QAction actCaptureImage;
     QAction actToggleInvertColor;
