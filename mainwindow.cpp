@@ -112,8 +112,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::selectCamera(bool checked)
 {
-    qDebug() << "action checked: " << checked;
-
     // Each time this dialog is launched,
     // we should query the latest camera list on system.
     cameraInfoList = QCameraInfo::availableCameras();
@@ -127,7 +125,6 @@ void MainWindow::selectCamera(bool checked)
 
 void MainWindow::setBBThreshold(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     dialogSetBBT->setCurrentThreshold(ui->viewfinder->getBBThreshold());
     dialogSetBBT->open();
 }
@@ -219,7 +216,6 @@ void MainWindow::wheelEvent(QWheelEvent *we)
 
 void MainWindow::onExit(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     if (QMessageBox::Ok == QMessageBox::information(this, "Exit",
             "Do you really want to exit?", QMessageBox::Ok, QMessageBox::Cancel)) {
         qDebug() << "quit program";
@@ -229,7 +225,6 @@ void MainWindow::onExit(bool checked)
 
 void MainWindow::saveImage(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     QProcessEnvironment pe = QProcessEnvironment::systemEnvironment();
     QString homeEnv = pe.value("HOME", "./");
     QDir homeDir(homeEnv);

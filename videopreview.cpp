@@ -68,19 +68,16 @@ void VideoPreview::setVideoSurface(VideoSurface *vs)
 
 void VideoPreview::toggleInvertColor(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     isInvertColor = !isInvertColor;
 }
 
 void VideoPreview::toggleScale(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     isScaleImage = !isScaleImage;
 }
 
 void VideoPreview::toggleBlackboard(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     isBloackBoard = !isBloackBoard;
 }
 
