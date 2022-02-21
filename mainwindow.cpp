@@ -150,11 +150,15 @@ void MainWindow::setCamera()
     double h = videocapture->get(cv::CAP_PROP_FRAME_HEIGHT);
     double w = videocapture->get(cv::CAP_PROP_FRAME_WIDTH);
     qDebug() << "default resolution: " << w << " " << h;
-    //videocapture->set(cv::CAP_PROP_FRAME_HEIGHT, 10000);
-    //videocapture->set(cv::CAP_PROP_FRAME_WIDTH, 10000);
-    //h = videocapture->get(cv::CAP_PROP_FRAME_HEIGHT);
-    //w = videocapture->get(cv::CAP_PROP_FRAME_WIDTH);
-    //qDebug() << "max resolution: " << w << " " << h;
+
+    //videocapture->set(cv::CAP_PROP_FRAME_WIDTH, 1920);
+    //videocapture->set(cv::CAP_PROP_FRAME_HEIGHT, 1080);
+    //videocapture->set(cv::CAP_PROP_FPS, 25);
+    //videocapture->set(cv::CAP_PROP_FOURCC,
+    //                  cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+    h = videocapture->get(cv::CAP_PROP_FRAME_HEIGHT);
+    w = videocapture->get(cv::CAP_PROP_FRAME_WIDTH);
+    qDebug() << "max resolution: " << w << " " << h;
     timer.start();
 }
 
