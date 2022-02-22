@@ -27,7 +27,8 @@ QList<QVideoFrame::PixelFormat> VideoSurface::supportedPixelFormats(
                 << QVideoFrame::Format_BGR24
                 << QVideoFrame::Format_BGR32
                 << QVideoFrame::Format_BGR555
-                << QVideoFrame::Format_BGR565;
+                << QVideoFrame::Format_BGR565
+                << QVideoFrame::Format_Jpeg;
     } else {
         return QList<QVideoFrame::PixelFormat>();
     }
