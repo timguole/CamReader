@@ -87,7 +87,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     setContextMenuPolicy(Qt::ActionsContextMenu);
 
-    timer.setInterval(500);
+    timer.setInterval(5000);
     QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(grabFrame()));
 }
 
@@ -212,7 +212,7 @@ void MainWindow::grabFrame()
     }
 
     QByteArray data = mycam->capture();
-    qDebug() << data.size();
+    qDebug() << "data size:" << data.size();
 
     ui->viewfinder->setFrame(source_image);
     ui->viewfinder->update();
