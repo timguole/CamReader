@@ -4,10 +4,14 @@
 #include <QObject>
 #include<QString>
 #include <QList>
+#include <QByteArray>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <string.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <linux/videodev2.h>
 
@@ -15,11 +19,11 @@
 class FrameFSI{
 public:
     QString formatName;
-    int formatInt;
-    int width;
-    int height;
-    int numerator;
-    int denominator;
+    unsigned int formatInt;
+    unsigned int width;
+    unsigned int height;
+    unsigned int numerator;
+    unsigned int denominator;
 };
 
 class MyCamera : public QObject
@@ -32,6 +36,12 @@ public:
         INITED, // some settings have been set and memory may also allocated
         STREAMON, // v4l2 device stream on is set
         CLOSED, // device file is closed
+        ERRORED,
+    };
+
+    struct MyBuffer {
+        void *start;
+        size_t length;
     };
 
     explicit MyCamera(QString device, QObject *parent = nullptr);
@@ -46,6 +56,9 @@ public:
     bool isStreamSupported();
     QList<FrameFSI> supportedResolutions();
     CAM_STATE currentState();
+    void setFrameFSI(FrameFSI &ffsi);
+    void turnOn();
+    QByteArray capture();
 
 signals:
     void errored(const QString &msg);
@@ -56,7 +69,9 @@ private:
     CAM_STATE cam_state;
     v4l2_buf_type buf_type;
     struct v4l2_capability cam_caps;
+    struct v4l2_format defaultformat;
     QList<FrameFSI> framefsi;
+    QList<struct MyBuffer> mybuffers;
 };
 
 #endif // MYCAMERA_H

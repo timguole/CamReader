@@ -8,19 +8,26 @@ MyCamera::MyCamera(QString device, QObject *parent) : QObject(parent)
   , cam_state(CAM_STATE::INVALID)
   , buf_type(V4L2_BUF_TYPE_VIDEO_CAPTURE)
   , framefsi()
+  , mybuffers()
 {
 
 }
 
 MyCamera::~MyCamera()
 {
+    for (MyBuffer mb : mybuffers) {
+        munmap(mb.start, mb.length);
+    }
+
     switch (cam_state) {
     case CAM_STATE::STREAMON:
         ::ioctl(fd, VIDIOC_STREAMOFF, &buf_type);
+        cam_state = CAM_STATE::INITED;
     case CAM_STATE::INITED:
-        close(fd);
+        close(fd); // TODO: release memory and other resources
     case CAM_STATE::OPENED:
         close(fd);
+        cam_state = CAM_STATE::CLOSED;
     case CAM_STATE::INVALID:
     case CAM_STATE::CLOSED:
         fd = -1;
@@ -33,19 +40,22 @@ int MyCamera::open()
 {
     if (cam_state != CAM_STATE::INVALID) {
         emit errored("Already opened");
+        cam_state = CAM_STATE::ERRORED;
         return 1;
     }
     fd = ::open(dev_name.toUtf8().constData(), O_RDWR);
     if (fd < 0) {
         emit errored("Failed to open device");
+        cam_state = CAM_STATE::ERRORED;
         return 1;
     }
-    int ret = ::ioctl(fd, VIDIOC_QUERYCAP, &cam_caps);
-    if (ret == -1) {
+    if (::ioctl(fd, VIDIOC_QUERYCAP, &cam_caps) == -1) {
         emit errored("Failed to query cam cap");
+        cam_state = CAM_STATE::ERRORED;
         return 1;
     }
 
+    // Get frame info: format, resolution, rate
     struct v4l2_fmtdesc fmtdesc;
     fmtdesc.index = 0;
     fmtdesc.type = buf_type;
@@ -75,6 +85,14 @@ int MyCamera::open()
                 framefsi << ffsi;
             }
         }
+    }
+
+    // get default format
+    defaultformat.type = buf_type;
+    if (::ioctl(fd, VIDIOC_G_FMT, &defaultformat)) {
+        emit errored("Failed to get default format");
+        cam_state = CAM_STATE::ERRORED;
+        return 1;
     }
 
     cam_state = CAM_STATE::OPENED;
@@ -124,4 +142,125 @@ QList<FrameFSI> MyCamera::supportedResolutions()
 MyCamera::CAM_STATE MyCamera::currentState()
 {
     return cam_state;
+}
+
+void MyCamera::setFrameFSI(FrameFSI &ffsi)
+{
+    if (cam_state != CAM_STATE::OPENED) {
+        emit errored("Config a not opened device");
+        cam_state = CAM_STATE::ERRORED;
+        return;
+    }
+
+    // set frame settings
+    defaultformat.fmt.pix.width = ffsi.width;
+    defaultformat.fmt.pix.height = ffsi.height;
+    defaultformat.fmt.pix.pixelformat = ffsi.formatInt;
+    if (::ioctl(fd, VIDIOC_S_FMT, &defaultformat) == -1) {
+        emit errored("Failed to set format or resolution");
+        cam_state = CAM_STATE::ERRORED;
+        return;
+    }
+
+    // prepare buffers
+    struct v4l2_requestbuffers reqbuf;
+    unsigned int i;
+
+    ::memset(&reqbuf, 0, sizeof(reqbuf));
+    reqbuf.type = buf_type;
+    reqbuf.memory = V4L2_MEMORY_MMAP;
+    reqbuf.count = 4;
+
+    if (-1 == ::ioctl (fd, VIDIOC_REQBUFS, &reqbuf)) {
+        if (errno == EINVAL) {
+            emit errored("capturing or mmap is not supported");
+        } else {
+            emit errored("VIDIOC_REQBUFS");
+        }
+        cam_state = CAM_STATE::ERRORED;
+        return;
+    }
+
+    if (reqbuf.count == 0) {
+        emit errored("Not enough buffer memory");
+        cam_state = CAM_STATE::ERRORED;
+        return;
+    }
+
+    for (int i = 0; i < reqbuf.count; i++) {
+        struct v4l2_buffer buffer;
+
+        memset(&buffer, 0, sizeof(buffer));
+        buffer.type = reqbuf.type;
+        buffer.memory = V4L2_MEMORY_MMAP;
+        buffer.index = i;
+
+        if (-1 == ioctl (fd, VIDIOC_QUERYBUF, &buffer)) {
+            emit errored("VIDIOC_QUERYBUF");
+            cam_state = CAM_STATE::ERRORED;
+            return;
+        }
+
+        MyBuffer mb;
+
+        mb.length = buffer.length;
+
+        mb.start = mmap(NULL, buffer.length,
+                    PROT_READ | PROT_WRITE, /* recommended */
+                    MAP_SHARED,             /* recommended */
+                    fd, buffer.m.offset);
+
+        if (MAP_FAILED == mb.start) {
+            emit errored("mmap failed");
+            cam_state = CAM_STATE::ERRORED;
+            return;
+        }
+        mybuffers << mb;
+    }
+
+    cam_state = CAM_STATE::INITED;
+}
+
+void MyCamera::turnOn()
+{
+    if (::ioctl(fd, VIDIOC_STREAMON, &buf_type) == -1) {
+        emit errored("Failed to turn on streaming");
+        cam_state = CAM_STATE::ERRORED;
+        return;
+    }
+
+    cam_state = CAM_STATE::STREAMON;
+}
+
+// Return a QByteArray containing the frame data
+// On error, an empty QByteArray is returned.
+QByteArray MyCamera::capture()
+{
+    if (cam_state != CAM_STATE::STREAMON) {
+        emit errored("Capture on a not stream-on device");
+        return QByteArray();
+    }
+
+    struct v4l2_buffer buf;
+    ::memset(&buf, 0, sizeof(buf));
+    buf.type = buf_type;
+    buf.memory = V4L2_MEMORY_MMAP;
+
+    qDebug() << "Before dequeue";
+    if (::ioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
+        emit errored("Failed to capture data");
+        cam_state = CAM_STATE::ERRORED;
+        return QByteArray();
+    }
+    qDebug() << "after dequeue";
+
+    MyBuffer mb = mybuffers.at(buf.index);
+    QByteArray data((const char *)mb.start, buf.length);
+    qDebug() << buf.index << buf.length << mb.start << mb.length;
+    if (::ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
+        emit errored("Failed to queue buffer");
+        cam_state = CAM_STATE::ERRORED;
+    }
+
+    return data;
 }

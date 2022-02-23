@@ -87,7 +87,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     setContextMenuPolicy(Qt::ActionsContextMenu);
 
-    timer.setInterval(200);
+    timer.setInterval(500);
     QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(grabFrame()));
 }
 
@@ -143,13 +143,18 @@ void MainWindow::setCamera()
     mycam->open();
     qDebug() << mycam->isCaptureSupported();
     qDebug() << mycam->isStreamSupported();
-    for (FrameFSI ffsi : mycam->supportedResolutions()) {
-        qDebug() << ffsi.formatName
-                 << ffsi.width
-                 << ffsi.height
-                 << ffsi.denominator / ffsi.numerator;
+    QList<FrameFSI> ffsis = mycam->supportedResolutions();
+    FrameFSI maxframe = ffsis.at(0);
+    for (FrameFSI ffsi : ffsis) {
+        if (ffsi.width > maxframe.width) {
+            maxframe = ffsi;
+        }
     }
-    //timer.start();
+    qDebug() << "max frame:" << maxframe.width
+             << maxframe.height << maxframe.formatName;
+    mycam->setFrameFSI(maxframe);
+    mycam->turnOn();
+    timer.start();
 }
 
 void MainWindow::wheelEvent(QWheelEvent *we)
@@ -202,8 +207,12 @@ void MainWindow::setBBThreshold(int t)
 void MainWindow::grabFrame()
 {
     if (mycam == nullptr) {
+        qDebug() << "No camera device configured";
         return;
     }
+
+    QByteArray data = mycam->capture();
+    qDebug() << data.size();
 
     ui->viewfinder->setFrame(source_image);
     ui->viewfinder->update();
