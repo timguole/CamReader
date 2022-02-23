@@ -3,6 +3,7 @@
 
 #include "dialogselectcamera.h"
 #include "dialogsetbbthreshold.h"
+#include "mycamera.h"
 
 #include <QMainWindow>
 #include <QCameraInfo>
@@ -32,6 +33,7 @@ public slots:
     void setCamera();
     void wheelEvent(QWheelEvent *we);
     void onExit(bool checked);
+    void onError(const QString &msg);
     void saveImage(bool checked);
     void setBBThreshold(int t);
     void grabFrame();
@@ -39,9 +41,7 @@ public slots:
 private:
     Ui::MainWindow *ui;
     QList<QCameraInfo> cameraInfoList;
-    cv::VideoCapture *videocapture;
-    cv::Mat source_frame;
-    cv::Mat rgb_frame;
+    MyCamera *mycam;
     QImage source_image;
     DialogSelectCamera *dialog;
     DialogSetBBThreshold *dialogSetBBT;

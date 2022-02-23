@@ -11,7 +11,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , videocapture(nullptr)
+    , mycam(nullptr)
     , actCaptureImage("Capture image")
     , actToggleInvertColor("Toggle invert color mode")
     , actToggleScale("Toggle scale frame")
@@ -97,10 +97,9 @@ MainWindow::~MainWindow()
     delete dialogSetBBT;
     delete ui;
 
-    if (videocapture != nullptr) {
-        videocapture->release();
-        delete videocapture;
-        videocapture = nullptr;
+    if (mycam != nullptr) {
+        delete mycam;
+        mycam = nullptr;
     }
 }
 
@@ -132,34 +131,25 @@ void MainWindow::setCamera()
     }
     timer.stop();
 
-    if (videocapture != nullptr) {
+    if (mycam != nullptr) {
         qDebug() << "delete old camera";
-        videocapture->release();
-        delete videocapture;
-        videocapture = nullptr;
+        delete mycam;
+        mycam = nullptr;
     }
     QString devname = cameraInfoList.at(index - 1).deviceName();
-    int cameraid = devname.at(devname.size() - 1).digitValue();
-    qDebug() << "camera id:" << cameraid;
-    videocapture = new cv::VideoCapture();
-    videocapture->open(cameraid);
-    if (!videocapture->isOpened()) {
-        qDebug() << "failed to open videocapture";
-        return;
+    mycam = new MyCamera(devname);
+    QObject::connect(mycam, SIGNAL(errored(const QString &)),
+                     this, SLOT(onError(const QString&)));
+    mycam->open();
+    qDebug() << mycam->isCaptureSupported();
+    qDebug() << mycam->isStreamSupported();
+    for (FrameFSI ffsi : mycam->supportedResolutions()) {
+        qDebug() << ffsi.formatName
+                 << ffsi.width
+                 << ffsi.height
+                 << ffsi.denominator / ffsi.numerator;
     }
-    double h = videocapture->get(cv::CAP_PROP_FRAME_HEIGHT);
-    double w = videocapture->get(cv::CAP_PROP_FRAME_WIDTH);
-    qDebug() << "default resolution: " << w << " " << h;
-
-    //videocapture->set(cv::CAP_PROP_FRAME_WIDTH, 1920);
-    //videocapture->set(cv::CAP_PROP_FRAME_HEIGHT, 1080);
-    //videocapture->set(cv::CAP_PROP_FPS, 25);
-    //videocapture->set(cv::CAP_PROP_FOURCC,
-    //                  cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
-    h = videocapture->get(cv::CAP_PROP_FRAME_HEIGHT);
-    w = videocapture->get(cv::CAP_PROP_FRAME_WIDTH);
-    qDebug() << "max resolution: " << w << " " << h;
-    timer.start();
+    //timer.start();
 }
 
 void MainWindow::wheelEvent(QWheelEvent *we)
@@ -174,6 +164,13 @@ void MainWindow::onExit(bool checked)
         qDebug() << "quit program";
        QApplication::quit();
     }
+}
+
+void MainWindow::onError(const QString &msg)
+{
+    QMessageBox::warning(this, "Camera device error",
+            msg,
+            QMessageBox::Ok);
 }
 
 void MainWindow::saveImage(bool checked)
@@ -204,24 +201,10 @@ void MainWindow::setBBThreshold(int t)
 
 void MainWindow::grabFrame()
 {
-    if (videocapture == nullptr) {
+    if (mycam == nullptr) {
         return;
     }
-    videocapture->read(source_frame);
-    if (source_frame.empty()) {
-        qDebug() << "source frame is empty";
-        return;
-    }
-    if (source_frame.type() != CV_8UC3) {
-        qDebug() << "mat type is not CV_8UC3";
-        return;
-    }
-    cv::cvtColor(source_frame, rgb_frame, cv::COLOR_BGR2RGB);
-    QImage i(rgb_frame.data,
-             rgb_frame.cols,
-             rgb_frame.rows,
-             QImage::Format_RGB888);
-    source_image = i;
+
     ui->viewfinder->setFrame(source_image);
     ui->viewfinder->update();
 }

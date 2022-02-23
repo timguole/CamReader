@@ -20,12 +20,14 @@ SOURCES += \
     dialogsetbbthreshold.cpp \
     main.cpp \
     mainwindow.cpp \
+    mycamera.cpp \
     videopreview.cpp
 
 HEADERS += \
     dialogselectcamera.h \
     dialogsetbbthreshold.h \
     mainwindow.h \
+    mycamera.h \
     videopreview.h
 
 LIBS += /usr/lib/x86_64-linux-gnu/libopencv_core.so.4.2.0 \
