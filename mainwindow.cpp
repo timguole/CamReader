@@ -12,15 +12,9 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , mycam(nullptr)
-    , actCaptureImage("Capture image")
-    , actToggleInvertColor("Toggle invert color mode")
-    , actToggleScale("Toggle scale frame")
-    , actToggleBB("Toggle blackboard mode")
-    , actSetBBThreshold("Adjust BB Threshold")
-    , actSelectCamera("Change camera")
-    , actExit("Exit")
 {
     ui->setupUi(this);
+    setupContextmenu();
 
     dialog = new DialogSelectCamera(this);
     QObject::connect(dialog, SIGNAL(accepted()), this, SLOT(setCamera()));
@@ -30,64 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(dialogSetBBT, SIGNAL(valueChanged(int)),
                      this, SLOT(setBBThreshold(int)));
 
-    // action: capture image
-    actCaptureImage.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Space));
-    addAction(&actCaptureImage);
-    QObject::connect(&actCaptureImage, SIGNAL(triggered(bool)),
-                     this, SLOT(saveImage(bool)));
 
-    QAction *a1 = new QAction();
-    a1->setSeparator(true);
-    addAction(a1);
-
-    // action: toggle invert color
-    actToggleInvertColor.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
-    addAction(&actToggleInvertColor);
-    QObject::connect(&actToggleInvertColor, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleInvertColor(bool)));
-
-    // action: toggle scale previewing image
-    actToggleScale.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
-    addAction(&actToggleScale);
-    QObject::connect(&actToggleScale, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleScale(bool)));
-
-    // action: toggle blackboard
-    actToggleBB.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_B));
-    addAction(&actToggleBB);
-    QObject::connect(&actToggleBB, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleBlackboard(bool)));
-
-    // action: set blackboard threshold
-    actSetBBThreshold.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
-    addAction(&actSetBBThreshold);
-    QObject::connect(&actSetBBThreshold, SIGNAL(triggered(bool)),
-                     this, SLOT(setBBThreshold(bool)));
-
-
-    QAction *a2 = new QAction();
-    a2->setSeparator(true);
-    addAction(a2);
-
-    // action: select camera
-    actSelectCamera.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_N));
-    addAction(&actSelectCamera);
-    QObject::connect(&actSelectCamera, SIGNAL(triggered(bool)),
-                     this, SLOT(selectCamera(bool)));
-
-    QAction *a3 = new QAction();
-    a3->setSeparator(true);
-    addAction(a3);
-
-    // action: exit
-    actExit.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
-    addAction(&actExit);
-    QObject::connect(&actExit, SIGNAL(triggered(bool)),
-                     this, SLOT(onExit(bool)));
-
-    setContextMenuPolicy(Qt::ActionsContextMenu);
-
-    timer.setInterval(5000);
+    timer.setInterval(40);
     QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(grabFrame()));
 }
 
@@ -101,6 +39,89 @@ MainWindow::~MainWindow()
         delete mycam;
         mycam = nullptr;
     }
+}
+
+void MainWindow::setupContextmenu()
+{
+    // action: capture image
+    actCaptureImage.setText("Capture image");
+    actCaptureImage.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Space));
+    contextmenu.addAction(&actCaptureImage);
+    QObject::connect(&actCaptureImage, SIGNAL(triggered(bool)),
+                     this, SLOT(saveImage(bool)));
+
+    QAction *a1 = new QAction();
+    a1->setSeparator(true);
+    contextmenu.addAction(a1);
+
+    // action: toggle invert color
+    actToggleInvertColor.setText("Toggle invert color mode");
+    actToggleInvertColor.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
+    contextmenu.addAction(&actToggleInvertColor);
+    QObject::connect(&actToggleInvertColor, SIGNAL(triggered(bool)),
+                     ui->viewfinder, SLOT(toggleInvertColor(bool)));
+
+    // action: toggle scale previewing image
+    actToggleScale.setText("Toggle scale frame");
+    actToggleScale.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
+    contextmenu.addAction(&actToggleScale);
+    QObject::connect(&actToggleScale, SIGNAL(triggered(bool)),
+                     ui->viewfinder, SLOT(toggleScale(bool)));
+
+    // add blackboard submenu
+    submenuBB.setTitle("Blackboard mode");
+    contextmenu.addMenu(&submenuBB);
+
+    // action: set blackboard threshold
+    actSetBBThreshold.setText("Adjust BB Threshold");
+    actSetBBThreshold.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
+    contextmenu.addAction(&actSetBBThreshold);
+    QObject::connect(&actSetBBThreshold, SIGNAL(triggered(bool)),
+                     this, SLOT(setBBThreshold(bool)));
+
+
+    QAction *a2 = new QAction();
+    a2->setSeparator(true);
+    contextmenu.addAction(a2);
+
+    // action: select camera
+    actSelectCamera.setText("Change camera");
+    actSelectCamera.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_N));
+    contextmenu.addAction(&actSelectCamera);
+    QObject::connect(&actSelectCamera, SIGNAL(triggered(bool)),
+                     this, SLOT(selectCamera(bool)));
+
+    QAction *a3 = new QAction();
+    a3->setSeparator(true);
+    contextmenu.addAction(a3);
+
+    // action: exit
+    actExit.setText("Exit");
+    actExit.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
+    contextmenu.addAction(&actExit);
+    QObject::connect(&actExit, SIGNAL(triggered(bool)),
+                     this, SLOT(onExit(bool)));
+
+    // blackboard submenu
+    // action: toggle blackboard mode
+    actToggleBB.setText("Toggle blackboard mode");
+    actToggleBB.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_B));
+    submenuBB.addAction(&actToggleBB);
+    QObject::connect(&actToggleBB, SIGNAL(triggered(bool)),
+                     ui->viewfinder, SLOT(toggleBB(bool)));
+
+    // action: toggle curve blackboard
+    actToggleCurveBB.setText("Toggle curve blackboard");
+    actToggleCurveBB.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
+    submenuBB.addAction(&actToggleCurveBB);
+    QObject::connect(&actToggleCurveBB, SIGNAL(triggered(bool)),
+                     ui->viewfinder, SLOT(toggleCurveBB(bool)));
+
+}
+
+void MainWindow::contextMenuEvent(QContextMenuEvent *event)
+{
+    contextmenu.exec(QCursor::pos());
 }
 
 void MainWindow::selectCamera(bool checked)
@@ -211,9 +232,8 @@ void MainWindow::grabFrame()
         return;
     }
 
-    QByteArray data = mycam->capture();
-    qDebug() << "data size:" << data.size();
-
+    QPixmap pixmap = mycam->capture();
+    source_image = pixmap.toImage();
     ui->viewfinder->setFrame(source_image);
     ui->viewfinder->update();
 }

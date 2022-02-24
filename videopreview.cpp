@@ -7,6 +7,7 @@ VideoPreview::VideoPreview(QWidget *parent)
     , isInvertColor(false)
     , isScaleImage(true)
     , isBloackBoard(false)
+    , isCutoff(true)
     , blackboardThreshold(100)
 {
 
@@ -25,9 +26,12 @@ void VideoPreview::paintEvent(QPaintEvent *event)
     }
     if (isBloackBoard) {
         if (image.format() == QImage::Format_RGB888) {
-            blackboardRgb(image);
-        } else if (image.format() == QImage::Format_ARGB32) {
+            blackboardRgb888(image);
+        } else if (image.format() == QImage::Format_ARGB32
+                   || image.format() == QImage::Format_RGB32) {
             blackboardRgba(image);
+        } else {
+            qDebug() << "not supported image format:" << image.format();
         }
     }
     // Scale image to widget size
@@ -66,14 +70,17 @@ void VideoPreview::toggleInvertColor(bool checked)
 
 void VideoPreview::toggleScale(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     isScaleImage = !isScaleImage;
 }
 
-void VideoPreview::toggleBlackboard(bool checked)
+void VideoPreview::toggleBB(bool checked)
 {
-    qDebug() << "action checked: " << checked;
     isBloackBoard = !isBloackBoard;
+}
+
+void VideoPreview::toggleCurveBB(bool checked)
+{
+    isCutoff = !isCutoff;
 }
 
 void VideoPreview::setBBThreshold(int t)
@@ -95,17 +102,24 @@ void VideoPreview::blackboardRgba(QImage &image)
     for (int i = 0; i < h; i++) {
         QRgb *line = (QRgb *)image.scanLine(i);
         for (int j = 0; j < w; j++) {
-            if (qRed(line[j]) < blackboardThreshold
-                    && qGreen(line[j]) < blackboardThreshold
-                    && qBlue(line[j]) < blackboardThreshold) {
-                line[j] = black;
+            int r = qRed(line[j]);
+            int g = qGreen(line[j]);
+            int b = qBlue(line[j]);
+            if (r < blackboardThreshold
+                    && g < blackboardThreshold
+                    && b < blackboardThreshold) {
+                if (isCutoff) {
+                    line[j] = black;
+                } else {
+                    line[j] = qRgb(r*r/255, g*g/255, b*b/255);
+                }
             }
 
         }
     }
 }
 
-void VideoPreview::blackboardRgb(QImage &image)
+void VideoPreview::blackboardRgb888(QImage &image)
 {
     int h = image.height();
     int w = image.width();
@@ -115,9 +129,15 @@ void VideoPreview::blackboardRgb(QImage &image)
             if (line[j] < blackboardThreshold
                     && line[j+1] < blackboardThreshold
                     && line[j+2] < blackboardThreshold) {
-                line[j] = 0;
-                line[j+1] = 0;
-                line[j+2] = 0;
+                if (isCutoff) {
+                    line[j] = 0;
+                    line[j+1] = 0;
+                    line[j+2] = 0;
+                } else {
+                    line[j] = line[j]*line[j]/255;
+                    line[j+1] = line[j+1]*line[j+1]/255;
+                    line[j+2] = line[j+2]*line[j+2]/255;
+                }
             }
 
         }

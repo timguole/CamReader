@@ -4,7 +4,7 @@
 #include <QObject>
 #include<QString>
 #include <QList>
-#include <QByteArray>
+#include <QPixmap>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -58,7 +58,7 @@ public:
     CAM_STATE currentState();
     void setFrameFSI(FrameFSI &ffsi);
     void turnOn();
-    QByteArray capture();
+    QPixmap capture();
 
 signals:
     void errored(const QString &msg);

@@ -9,6 +9,7 @@
 #include <QCameraInfo>
 #include <QList>
 #include <QAction>
+#include <QMenu>
 #include <QTimer>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
@@ -38,7 +39,12 @@ public slots:
     void setBBThreshold(int t);
     void grabFrame();
 
+protected:
+    void contextMenuEvent(QContextMenuEvent *event);
+
 private:
+    void setupContextmenu();
+
     Ui::MainWindow *ui;
     QList<QCameraInfo> cameraInfoList;
     MyCamera *mycam;
@@ -47,12 +53,16 @@ private:
     DialogSetBBThreshold *dialogSetBBT;
     QTimer timer;
 
+    QMenu contextmenu;
     QAction actCaptureImage;
     QAction actToggleInvertColor;
     QAction actToggleScale;
-    QAction actToggleBB;
     QAction actSetBBThreshold;
     QAction actSelectCamera;
     QAction actExit;
+
+    QMenu submenuBB; // sub menu for blackboard mode
+    QAction actToggleBB;
+    QAction actToggleCurveBB;
 };
 #endif // MAINWINDOW_H

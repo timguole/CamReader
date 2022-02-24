@@ -45,13 +45,14 @@ int MyCamera::open()
         cam_state = CAM_STATE::ERRORED;
         return 1;
     }
+
     fd = ::open(dev_name.toUtf8().constData(), O_RDWR);
     if (fd < 0) {
         emit errored("Failed to open device");
         cam_state = CAM_STATE::ERRORED;
         return 1;
     }
-    qDebug() << "fd:" << fd;
+
     if (::ioctl(fd, VIDIOC_QUERYCAP, &cam_caps) == -1) {
         emit errored("Failed to query cam cap");
         cam_state = CAM_STATE::ERRORED;
@@ -241,11 +242,13 @@ void MyCamera::turnOn()
 
 // Return a QByteArray containing the frame data
 // On error, an empty QByteArray is returned.
-QByteArray MyCamera::capture()
+QPixmap MyCamera::capture()
 {
+    QPixmap pixmap;
+
     if (cam_state != CAM_STATE::STREAMON) {
-        emit errored("Capture on a not stream-on device");
-        return QByteArray();
+        qDebug() << "Capture on a not stream-on device";
+        return pixmap; // return the empty pixmap
     }
 
     struct v4l2_buffer buf;
@@ -254,18 +257,18 @@ QByteArray MyCamera::capture()
     buf.memory = V4L2_MEMORY_MMAP;
 
     if (::ioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
-        emit errored("Failed to capture data");
+        qDebug() << "Failed to capture data";
         cam_state = CAM_STATE::ERRORED;
-        return QByteArray();
+        return pixmap;
     }
 
     MyBuffer mb = mybuffers.at(buf.index);
-    QByteArray data((const char *)mb.start, mb.length);
+    pixmap.loadFromData((const unsigned char *)mb.start, mb.length);
 
     if (::ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
-        emit errored("Failed to queue buffer");
+        qDebug() << "Failed to queue buffer";
         cam_state = CAM_STATE::ERRORED;
     }
 
-    return data;
+    return pixmap;
 }

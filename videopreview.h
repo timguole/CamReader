@@ -16,16 +16,18 @@ public:
 public slots:
     void toggleInvertColor(bool);
     void toggleScale(bool);
-    void toggleBlackboard(bool);
+    void toggleBB(bool);
+    void toggleCurveBB(bool);
 
 private:
     void blackboardRgba(QImage &image);
-    void blackboardRgb(QImage &image);
+    void blackboardRgb888(QImage &image);
 
     QImage image;
     volatile bool isInvertColor;
     volatile bool isScaleImage;
     volatile bool isBloackBoard;
+    volatile bool isCutoff;
     volatile int blackboardThreshold;
 };
 
