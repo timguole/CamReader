@@ -162,8 +162,11 @@ void MainWindow::setCamera()
     QObject::connect(mycam, SIGNAL(errored(const QString &)),
                      this, SLOT(onError(const QString&)));
     mycam->open();
-    qDebug() << mycam->isCaptureSupported();
-    qDebug() << mycam->isStreamSupported();
+    if (mycam->currentState() != MyCamera::CAM_STATE::OPENED) {
+        qDebug() << "Failed to open camera device";
+        return;
+    }
+
     QList<FrameFSI> ffsis = mycam->supportedResolutions();
     FrameFSI maxframe = ffsis.at(0);
     for (FrameFSI ffsi : ffsis) {

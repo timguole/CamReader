@@ -28,8 +28,13 @@ void VideoPreview::paintEvent(QPaintEvent *event)
         return;
     }
 
-    imageWidth = image.width();
-    imageHeight = image.height();
+    if ((image.width() != imageWidth)
+            || (image.height() != imageHeight)) {
+        xRect = 0;
+        yRect = 0;
+        imageWidth = image.width();
+        imageHeight = image.height();
+    }
 
     if (isInvertColor) {
         image.invertPixels();
@@ -64,13 +69,15 @@ void VideoPreview::paintEvent(QPaintEvent *event)
             y = (wh - ih) / 2;
         }
     } else {
+        int wRect = image.width() > ww ? ww : image.width();
+        int hRect = image.height() > wh ? wh : image.height();
+        scaledImage = image.copy(QRect(xRect, yRect, wRect, hRect));
         if (imageWidth < ww) {
             x = (ww - imageWidth) / 2;
         }
         if (imageHeight < wh) {
             y = (wh - imageHeight) / 2;
         }
-        scaledImage = image;
     }
     painter.drawImage(x, y, scaledImage);
 }
@@ -179,18 +186,15 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
     int xoffset = x - xPressed;
     int yoffset = y - yPressed;
 
-    if (((xRect + xoffset) >= 0)
-            || ((xRect + xoffset) <= (imageWidth - width()))) {
-        xRect += xoffset;
+    if (((xRect - xoffset) >= 0)
+            && ((xRect - xoffset) <= (imageWidth - width()))) {
+        xRect -= xoffset;
     }
-    if (((yRect + yoffset) >= 0)
-            || ((yRect + yoffset) <= (imageHeight - height()))) {
-        yRect += yoffset;
+    if (((yRect - yoffset) >= 0)
+            && ((yRect - yoffset) <= (imageHeight - height()))) {
+        yRect -= yoffset;
     }
     xPressed = x;
     yPressed = y;
     event->accept();
-
-    qDebug() << "pressed:" << xPressed << yPressed;
-    qDebug() << "rect:" << xRect << yRect;
 }
