@@ -9,6 +9,12 @@ VideoPreview::VideoPreview(QWidget *parent)
     , isBloackBoard(false)
     , isCutoff(true)
     , blackboardThreshold(100)
+    , xRect(0)
+    , yRect(0)
+    , xPressed(0)
+    , yPressed(0)
+    , imageWidth(0)
+    , imageHeight(0)
 {
 
 }
@@ -21,6 +27,10 @@ void VideoPreview::paintEvent(QPaintEvent *event)
         qDebug() << "image is null";
         return;
     }
+
+    imageWidth = image.width();
+    imageHeight = image.height();
+
     if (isInvertColor) {
         image.invertPixels();
     }
@@ -49,10 +59,17 @@ void VideoPreview::paintEvent(QPaintEvent *event)
 
         if (iw < ww) {
             x = (ww - iw) / 2;
-        } else if (ih < wh) {
+        }
+        if (ih < wh) {
             y = (wh - ih) / 2;
         }
     } else {
+        if (imageWidth < ww) {
+            x = (ww - imageWidth) / 2;
+        }
+        if (imageHeight < wh) {
+            y = (wh - imageHeight) / 2;
+        }
         scaledImage = image;
     }
     painter.drawImage(x, y, scaledImage);
@@ -142,4 +159,38 @@ void VideoPreview::blackboardRgb888(QImage &image)
 
         }
     }
+}
+
+void VideoPreview::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::MouseButton::LeftButton) {
+        event->accept();
+    } else {
+        return;
+    }
+    xPressed = QCursor::pos().x();
+    yPressed = QCursor::pos().y();
+}
+
+void VideoPreview::mouseMoveEvent(QMouseEvent *event)
+{
+    int x = QCursor::pos().x();
+    int y = QCursor::pos().y();
+    int xoffset = x - xPressed;
+    int yoffset = y - yPressed;
+
+    if (((xRect + xoffset) >= 0)
+            || ((xRect + xoffset) <= (imageWidth - width()))) {
+        xRect += xoffset;
+    }
+    if (((yRect + yoffset) >= 0)
+            || ((yRect + yoffset) <= (imageHeight - height()))) {
+        yRect += yoffset;
+    }
+    xPressed = x;
+    yPressed = y;
+    event->accept();
+
+    qDebug() << "pressed:" << xPressed << yPressed;
+    qDebug() << "rect:" << xRect << yRect;
 }

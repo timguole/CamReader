@@ -2,6 +2,7 @@
 #define VIDEOPREVIEW_H
 
 #include <QWidget>
+#include <QMouseEvent>
 
 class VideoPreview : public QWidget
 {
@@ -22,6 +23,8 @@ public slots:
 private:
     void blackboardRgba(QImage &image);
     void blackboardRgb888(QImage &image);
+    void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
 
     QImage image;
     volatile bool isInvertColor;
@@ -29,6 +32,12 @@ private:
     volatile bool isBloackBoard;
     volatile bool isCutoff;
     volatile int blackboardThreshold;
+    int xRect; // x of the image's visible rectangle
+    int yRect; // y of the image's visible rectangle
+    int xPressed;
+    int yPressed;
+    int imageWidth;
+    int imageHeight;
 };
 
 #endif // VIDEOPREVIEW_H
