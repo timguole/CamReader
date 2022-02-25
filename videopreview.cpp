@@ -5,7 +5,6 @@
 VideoPreview::VideoPreview(QWidget *parent)
     : QWidget(parent)
     , isInvertColor(false)
-    , isScaleImage(true)
     , isBloackBoard(false)
     , isCutoff(true)
     , blackboardThreshold(100)
@@ -16,7 +15,8 @@ VideoPreview::VideoPreview(QWidget *parent)
     , imageWidth(0)
     , imageHeight(0)
 {
-
+    scaleWidth = width();
+    scaleHeight = height();
 }
 
 void VideoPreview::paintEvent(QPaintEvent *event)
@@ -28,17 +28,23 @@ void VideoPreview::paintEvent(QPaintEvent *event)
         return;
     }
 
+    // if original frame size changed ( e.g.
+    // changing to a different device),
+    // reset offset of x and y
     if ((image.width() != imageWidth)
             || (image.height() != imageHeight)) {
-        xRect = 0;
-        yRect = 0;
+        xRect = 0; // reset
+        yRect = 0; // reset
         imageWidth = image.width();
         imageHeight = image.height();
     }
 
+    // if color inversion is set, do it
     if (isInvertColor) {
         image.invertPixels();
     }
+
+    // blackboard mode makes dark pixels pure black
     if (isBloackBoard) {
         if (image.format() == QImage::Format_RGB888) {
             blackboardRgb888(image);
@@ -49,37 +55,35 @@ void VideoPreview::paintEvent(QPaintEvent *event)
             qDebug() << "not supported image format:" << image.format();
         }
     }
-    // Scale image to widget size
-    QImage scaledImage;
+
+    // scale image and display visible rectangle of image.
     int ww = width();
     int wh = height();
+
+    // if image size is different from scale size,
+    // we scale the image
+    if (((image.width() != scaleWidth)
+            || (image.height() != scaleHeight))) {
+        image = image.scaled(QSize(scaleWidth, scaleHeight),
+                                   Qt::KeepAspectRatio);
+    }
+
+    int wRect = image.width() > ww ? ww : image.width();
+    int hRect = image.height() > wh ? wh : image.height();
+    QImage croppedImage = image.copy(QRect(xRect, yRect, wRect, hRect));
+
+    // if iamge is smaller than the widget,
+    // display it at the center of widget
     int x = 0;
     int y = 0;
-
-    if (isScaleImage && ((image.width() != ww)
-            || (image.height() != wh))) {
-        scaledImage = image.scaled(size(), Qt::KeepAspectRatio);
-        int iw = scaledImage.width();
-        int ih = scaledImage.height();
-
-        if (iw < ww) {
-            x = (ww - iw) / 2;
-        }
-        if (ih < wh) {
-            y = (wh - ih) / 2;
-        }
-    } else {
-        int wRect = image.width() > ww ? ww : image.width();
-        int hRect = image.height() > wh ? wh : image.height();
-        scaledImage = image.copy(QRect(xRect, yRect, wRect, hRect));
-        if (imageWidth < ww) {
-            x = (ww - imageWidth) / 2;
-        }
-        if (imageHeight < wh) {
-            y = (wh - imageHeight) / 2;
-        }
+    if (scaleWidth < ww) {
+        x = (ww - scaleWidth) / 2;
     }
-    painter.drawImage(x, y, scaledImage);
+    if (scaleHeight < wh) {
+        y = (wh - scaleHeight) / 2;
+    }
+
+    painter.drawImage(x, y, croppedImage);
 }
 
 int VideoPreview::getBBThreshold()
@@ -92,9 +96,23 @@ void VideoPreview::toggleInvertColor(bool checked)
     isInvertColor = !isInvertColor;
 }
 
-void VideoPreview::toggleScale(bool checked)
+void VideoPreview::toggleResize(bool checked)
 {
-    isScaleImage = !isScaleImage;
+    scaleWidth = (scaleWidth != imageWidth) ? imageWidth : width();
+    scaleHeight = (scaleHeight != imageHeight) ? imageHeight : height();
+
+    scaleWidth = (scaleWidth < 320) ? 320 : scaleWidth;
+    scaleWidth = (scaleWidth > 8000) ? 8000 : scaleWidth;
+    scaleHeight = (scaleHeight < 180) ? 180 : scaleHeight;
+    scaleHeight = (scaleHeight > 4500) ? 4500 : scaleHeight;
+
+    int xnewmax = scaleWidth - width();
+    int ynewmax = scaleHeight - height();
+    xRect = ((xRect > xnewmax) && (xnewmax > 0)) ? xnewmax : xRect;
+    yRect = ((yRect > ynewmax) && (ynewmax > 0)) ? ynewmax : yRect;
+
+    xRect = (xnewmax <= 0) ? 0 : xRect;
+    yRect = (ynewmax <= 0) ? 0 : yRect;
 }
 
 void VideoPreview::toggleBB(bool checked)
@@ -187,14 +205,40 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
     int yoffset = y - yPressed;
 
     if (((xRect - xoffset) >= 0)
-            && ((xRect - xoffset) <= (imageWidth - width()))) {
+            && ((xRect - xoffset) <= (scaleWidth - width()))) {
         xRect -= xoffset;
     }
     if (((yRect - yoffset) >= 0)
-            && ((yRect - yoffset) <= (imageHeight - height()))) {
+            && ((yRect - yoffset) <= (scaleHeight - height()))) {
         yRect -= yoffset;
     }
     xPressed = x;
     yPressed = y;
     event->accept();
+}
+
+void VideoPreview::resizeEvent(QResizeEvent *event)
+{
+    scaleWidth = event->size().width();
+    scaleHeight = event->size().height();
+}
+
+void VideoPreview::wheelEvent(QWheelEvent *we)
+{
+    double factor = (we->angleDelta().y() > 0) ? 1.25 : 0.80;
+    scaleWidth *= factor;
+    scaleHeight *= factor;
+
+   scaleWidth = (scaleWidth < 320) ? 320 : scaleWidth;
+   scaleWidth = (scaleWidth > 8000) ? 8000 : scaleWidth;
+   scaleHeight = (scaleHeight < 180) ? 180 : scaleHeight;
+   scaleHeight = (scaleHeight > 4500) ? 4500 : scaleHeight;
+
+   int xnewmax = scaleWidth - width();
+   int ynewmax = scaleHeight - height();
+   xRect = ((xRect > xnewmax) && (xnewmax > 0)) ? xnewmax : xRect;
+   yRect = ((yRect > ynewmax) && (ynewmax > 0)) ? ynewmax : yRect;
+
+   xRect = (xnewmax <= 0) ? 0 : xRect;
+   yRect = (ynewmax <= 0) ? 0 : yRect;
 }

@@ -32,7 +32,6 @@ public slots:
     void selectCamera(bool checked = false);
     void setBBThreshold(bool checked = false);
     void setCamera();
-    void wheelEvent(QWheelEvent *we);
     void onExit(bool checked);
     void onError(const QString &msg);
     void saveImage(bool checked);

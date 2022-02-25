@@ -62,11 +62,11 @@ void MainWindow::setupContextmenu()
                      ui->viewfinder, SLOT(toggleInvertColor(bool)));
 
     // action: toggle scale previewing image
-    actToggleScale.setText("Toggle scale frame");
+    actToggleScale.setText("Toggle resize frame");
     actToggleScale.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
     contextmenu.addAction(&actToggleScale);
     QObject::connect(&actToggleScale, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleScale(bool)));
+                     ui->viewfinder, SLOT(toggleResize(bool)));
 
     // add blackboard submenu
     submenuBB.setTitle("Blackboard mode");
@@ -178,12 +178,11 @@ void MainWindow::setCamera()
              << maxframe.height << maxframe.formatName;
     mycam->setFrameFSI(maxframe);
     mycam->turnOn();
+    int frameinterval = maxframe.numerator * 1000 / maxframe.denominator;
+    qDebug() << "frame rate:" << (1000 / frameinterval);
+    timer.stop();
+    timer.setInterval(frameinterval);
     timer.start();
-}
-
-void MainWindow::wheelEvent(QWheelEvent *we)
-{
-    we->accept();
 }
 
 void MainWindow::onExit(bool checked)
