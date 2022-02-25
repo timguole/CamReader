@@ -30,10 +30,6 @@ HEADERS += \
     mycamera.h \
     videopreview.h
 
-LIBS += /usr/lib/x86_64-linux-gnu/libopencv_core.so.4.2.0 \
-        /usr/lib/x86_64-linux-gnu/libopencv_videoio.so.4.2.0 \
-        /usr/lib/x86_64-linux-gnu/libopencv_imgproc.so.4.2.0
-
 FORMS += \
     dialogSelectCamera.ui \
     dialogSetBBThreshold.ui \

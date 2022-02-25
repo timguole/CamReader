@@ -5,8 +5,6 @@
 #include <QDateTime>
 #include <QProcessEnvironment>
 #include <QDir>
-#include <opencv2/core/hal/interface.h>
-#include <opencv2/imgproc.hpp>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

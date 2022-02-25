@@ -11,10 +11,6 @@
 #include <QAction>
 #include <QMenu>
 #include <QTimer>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core.hpp>
-#include <opencv2/core/mat.hpp>
-#include <opencv2/videoio.hpp>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
