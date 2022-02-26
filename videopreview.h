@@ -24,6 +24,9 @@ public slots:
 private:
     void blackboardRgba(QImage &image);
     void blackboardRgb888(QImage &image);
+    void updateVewportSize();
+
+    // override event handlers
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void wheelEvent(QWheelEvent *we);

@@ -39,23 +39,6 @@ void VideoPreview::paintEvent(QPaintEvent *event)
         imageHeight = image.height();
     }
 
-    // if color inversion is set, do it
-    if (isInvertColor) {
-        image.invertPixels();
-    }
-
-    // blackboard mode makes dark pixels pure black
-    if (isBloackBoard) {
-        if (image.format() == QImage::Format_RGB888) {
-            blackboardRgb888(image);
-        } else if (image.format() == QImage::Format_ARGB32
-                   || image.format() == QImage::Format_RGB32) {
-            blackboardRgba(image);
-        } else {
-            qDebug() << "not supported image format:" << image.format();
-        }
-    }
-
     // scale image and display visible rectangle of image.
     int ww = width();
     int wh = height();
@@ -83,6 +66,22 @@ void VideoPreview::paintEvent(QPaintEvent *event)
         y = (wh - scaleHeight) / 2;
     }
 
+    // if color inversion is set, do it
+    if (isInvertColor) {
+        croppedImage.invertPixels();
+    }
+
+    // blackboard mode makes dark pixels pure black
+    if (isBloackBoard) {
+        if (croppedImage.format() == QImage::Format_RGB888) {
+            blackboardRgb888(croppedImage);
+        } else if (croppedImage.format() == QImage::Format_ARGB32
+                   || croppedImage.format() == QImage::Format_RGB32) {
+            blackboardRgba(croppedImage);
+        } else {
+            qDebug() << "not supported image format:" << image.format();
+        }
+    }
     painter.drawImage(x, y, croppedImage);
 }
 
@@ -100,19 +99,7 @@ void VideoPreview::toggleResize(bool checked)
 {
     scaleWidth = (scaleWidth != imageWidth) ? imageWidth : width();
     scaleHeight = (scaleHeight != imageHeight) ? imageHeight : height();
-
-    scaleWidth = (scaleWidth < 320) ? 320 : scaleWidth;
-    scaleWidth = (scaleWidth > 8000) ? 8000 : scaleWidth;
-    scaleHeight = (scaleHeight < 180) ? 180 : scaleHeight;
-    scaleHeight = (scaleHeight > 4500) ? 4500 : scaleHeight;
-
-    int xnewmax = scaleWidth - width();
-    int ynewmax = scaleHeight - height();
-    xRect = ((xRect > xnewmax) && (xnewmax > 0)) ? xnewmax : xRect;
-    yRect = ((yRect > ynewmax) && (ynewmax > 0)) ? ynewmax : yRect;
-
-    xRect = (xnewmax <= 0) ? 0 : xRect;
-    yRect = (ynewmax <= 0) ? 0 : yRect;
+    updateVewportSize();
 }
 
 void VideoPreview::toggleBB(bool checked)
@@ -215,12 +202,15 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
     xPressed = x;
     yPressed = y;
     event->accept();
+    qDebug() << scaleWidth << scaleHeight
+             << xRect << yRect;
 }
 
 void VideoPreview::resizeEvent(QResizeEvent *event)
 {
     scaleWidth = event->size().width();
     scaleHeight = event->size().height();
+    updateVewportSize();
 }
 
 void VideoPreview::wheelEvent(QWheelEvent *we)
@@ -228,17 +218,23 @@ void VideoPreview::wheelEvent(QWheelEvent *we)
     double factor = (we->angleDelta().y() > 0) ? 1.25 : 0.80;
     scaleWidth *= factor;
     scaleHeight *= factor;
+    updateVewportSize();
+}
 
-   scaleWidth = (scaleWidth < 320) ? 320 : scaleWidth;
-   scaleWidth = (scaleWidth > 8000) ? 8000 : scaleWidth;
-   scaleHeight = (scaleHeight < 180) ? 180 : scaleHeight;
-   scaleHeight = (scaleHeight > 4500) ? 4500 : scaleHeight;
+void VideoPreview::updateVewportSize()
+{
+    scaleWidth = (scaleWidth < 320) ? 320 : scaleWidth;
+    scaleWidth = (scaleWidth > 8000) ? 8000 : scaleWidth;
+    scaleHeight = (scaleHeight < 180) ? 180 : scaleHeight;
+    scaleHeight = (scaleHeight > 4500) ? 4500 : scaleHeight;
 
-   int xnewmax = scaleWidth - width();
-   int ynewmax = scaleHeight - height();
-   xRect = ((xRect > xnewmax) && (xnewmax > 0)) ? xnewmax : xRect;
-   yRect = ((yRect > ynewmax) && (ynewmax > 0)) ? ynewmax : yRect;
+    int xnewmax = scaleWidth - width();
+    int ynewmax = scaleHeight - height();
+    xRect = ((xRect > xnewmax) && (xnewmax > 0)) ? xnewmax : xRect;
+    yRect = ((yRect > ynewmax) && (ynewmax > 0)) ? ynewmax : yRect;
 
-   xRect = (xnewmax <= 0) ? 0 : xRect;
-   yRect = (ynewmax <= 0) ? 0 : yRect;
+    xRect = (xnewmax <= 0) ? 0 : xRect;
+    yRect = (ynewmax <= 0) ? 0 : yRect;
+    qDebug() << scaleWidth << scaleHeight
+             << xRect << yRect;
 }
