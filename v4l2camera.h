@@ -1,5 +1,5 @@
-#ifndef MYCAMERA_H
-#define MYCAMERA_H
+#ifndef V4L2CAMERA_H
+#define V4L2CAMERA_H
 
 #include <QObject>
 #include<QString>
@@ -26,7 +26,7 @@ public:
     unsigned int denominator;
 };
 
-class MyCamera : public QObject
+class V4L2Camera : public QObject
 {
     Q_OBJECT
 public:
@@ -44,8 +44,8 @@ public:
         size_t length;
     };
 
-    explicit MyCamera(QString device, QObject *parent = nullptr);
-    ~MyCamera();
+    explicit V4L2Camera(QString device, QObject *parent = nullptr);
+    ~V4L2Camera();
     int open();
     QString driverName();
     int driverVersion();
@@ -74,4 +74,4 @@ private:
     QList<struct MyBuffer> mybuffers;
 };
 
-#endif // MYCAMERA_H
+#endif // V4L2CAMERA_H

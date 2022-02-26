@@ -156,11 +156,11 @@ void MainWindow::setCamera()
         mycam = nullptr;
     }
     QString devname = cameraInfoList.at(index - 1).deviceName();
-    mycam = new MyCamera(devname);
+    mycam = new V4L2Camera(devname);
     QObject::connect(mycam, SIGNAL(errored(const QString &)),
                      this, SLOT(onError(const QString&)));
     mycam->open();
-    if (mycam->currentState() != MyCamera::CAM_STATE::OPENED) {
+    if (mycam->currentState() != V4L2Camera::CAM_STATE::OPENED) {
         qDebug() << "Failed to open camera device";
         return;
     }

@@ -3,7 +3,7 @@
 
 #include "dialogselectcamera.h"
 #include "dialogsetbbthreshold.h"
-#include "mycamera.h"
+#include "v4l2camera.h"
 
 #include <QMainWindow>
 #include <QCameraInfo>
@@ -42,7 +42,7 @@ private:
 
     Ui::MainWindow *ui;
     QList<QCameraInfo> cameraInfoList;
-    MyCamera *mycam;
+    V4L2Camera *mycam;
     QImage source_image;
     DialogSelectCamera *dialog;
     DialogSetBBThreshold *dialogSetBBT;

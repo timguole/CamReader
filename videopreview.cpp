@@ -37,6 +37,8 @@ void VideoPreview::paintEvent(QPaintEvent *event)
         yRect = 0; // reset
         imageWidth = image.width();
         imageHeight = image.height();
+        scaleWidth = width();
+        scaleHeight = height();
     }
 
     // scale image and display visible rectangle of image.
@@ -202,8 +204,6 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
     xPressed = x;
     yPressed = y;
     event->accept();
-    qDebug() << scaleWidth << scaleHeight
-             << xRect << yRect;
 }
 
 void VideoPreview::resizeEvent(QResizeEvent *event)
@@ -235,6 +235,4 @@ void VideoPreview::updateVewportSize()
 
     xRect = (xnewmax <= 0) ? 0 : xRect;
     yRect = (ynewmax <= 0) ? 0 : yRect;
-    qDebug() << scaleWidth << scaleHeight
-             << xRect << yRect;
 }

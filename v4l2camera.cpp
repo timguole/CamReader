@@ -1,8 +1,8 @@
-#include "mycamera.h"
+#include "v4l2camera.h"
 #include <unistd.h>
 #include <QDebug>
 
-MyCamera::MyCamera(QString device, QObject *parent) : QObject(parent)
+V4L2Camera::V4L2Camera(QString device, QObject *parent) : QObject(parent)
   , dev_name(device)
   , fd(-1)
   , cam_state(CAM_STATE::INVALID)
@@ -13,14 +13,15 @@ MyCamera::MyCamera(QString device, QObject *parent) : QObject(parent)
 
 }
 
-MyCamera::~MyCamera()
+V4L2Camera::~V4L2Camera()
 {
-    qDebug() << "~MyCamera";
+    qDebug() << "~V4L2Camera";
     for (MyBuffer mb : mybuffers) {
         munmap(mb.start, mb.length);
     }
 
     switch (cam_state) {
+    case CAM_STATE::ERRORED:
     case CAM_STATE::STREAMON:
         if (::ioctl(fd, VIDIOC_STREAMOFF, &buf_type) == -1) {
             qDebug() << "turn off stream failed";
@@ -38,7 +39,7 @@ MyCamera::~MyCamera()
     }
 }
 
-int MyCamera::open()
+int V4L2Camera::open()
 {
     if (cam_state != CAM_STATE::INVALID) {
         emit errored("Already opened");
@@ -49,7 +50,7 @@ int MyCamera::open()
     fd = ::open(dev_name.toUtf8().constData(), O_RDWR);
     if (fd < 0) {
         emit errored("Failed to open device");
-        cam_state = CAM_STATE::ERRORED;
+        cam_state = CAM_STATE::INVALID;
         return 1;
     }
 
@@ -102,52 +103,52 @@ int MyCamera::open()
     return 0;
 }
 
-QString MyCamera::driverName()
+QString V4L2Camera::driverName()
 {
     return QString((char *)cam_caps.driver);
 }
 
-int MyCamera::driverVersion()
+int V4L2Camera::driverVersion()
 {
     return cam_caps.version;
 }
 
-QString MyCamera::bufInfo()
+QString V4L2Camera::bufInfo()
 {
     return QString((char *)cam_caps.bus_info);
 }
 
-QString MyCamera::cardInfo()
+QString V4L2Camera::cardInfo()
 {
     return QString((char *)cam_caps.card);
 }
 
-int MyCamera::capability()
+int V4L2Camera::capability()
 {
     return cam_caps.capabilities;
 }
 
-bool MyCamera::isCaptureSupported()
+bool V4L2Camera::isCaptureSupported()
 {
     return (cam_caps.capabilities & V4L2_CAP_VIDEO_CAPTURE) == V4L2_CAP_VIDEO_CAPTURE;
 }
 
-bool MyCamera::isStreamSupported()
+bool V4L2Camera::isStreamSupported()
 {
     return (cam_caps.capabilities & V4L2_CAP_STREAMING) == V4L2_CAP_STREAMING;
 }
 
-QList<FrameFSI> MyCamera::supportedResolutions()
+QList<FrameFSI> V4L2Camera::supportedResolutions()
 {
     return framefsi;
 }
 
-MyCamera::CAM_STATE MyCamera::currentState()
+V4L2Camera::CAM_STATE V4L2Camera::currentState()
 {
     return cam_state;
 }
 
-void MyCamera::setFrameFSI(FrameFSI &ffsi)
+void V4L2Camera::setFrameFSI(FrameFSI &ffsi)
 {
     if (cam_state != CAM_STATE::OPENED) {
         emit errored("Config a not opened device");
@@ -189,7 +190,7 @@ void MyCamera::setFrameFSI(FrameFSI &ffsi)
         return;
     }
 
-    for (int i = 0; i < reqbuf.count; i++) {
+    for (unsigned int i = 0; i < reqbuf.count; i++) {
         struct v4l2_buffer buffer;
 
         memset(&buffer, 0, sizeof(buffer));
@@ -229,7 +230,7 @@ void MyCamera::setFrameFSI(FrameFSI &ffsi)
     cam_state = CAM_STATE::INITED;
 }
 
-void MyCamera::turnOn()
+void V4L2Camera::turnOn()
 {
     if (::ioctl(fd, VIDIOC_STREAMON, &buf_type) == -1) {
         emit errored("Failed to turn on streaming");
@@ -242,7 +243,7 @@ void MyCamera::turnOn()
 
 // Return a QByteArray containing the frame data
 // On error, an empty QByteArray is returned.
-QPixmap MyCamera::capture()
+QPixmap V4L2Camera::capture()
 {
     QPixmap pixmap;
 

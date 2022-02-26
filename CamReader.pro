@@ -20,14 +20,14 @@ SOURCES += \
     dialogsetbbthreshold.cpp \
     main.cpp \
     mainwindow.cpp \
-    mycamera.cpp \
+    v4l2camera.cpp \
     videopreview.cpp
 
 HEADERS += \
     dialogselectcamera.h \
     dialogsetbbthreshold.h \
     mainwindow.h \
-    mycamera.h \
+    v4l2camera.h \
     videopreview.h
 
 FORMS += \
