@@ -120,6 +120,7 @@ void MainWindow::setupContextmenu()
 void MainWindow::contextMenuEvent(QContextMenuEvent *event)
 {
     contextmenu.exec(QCursor::pos());
+    event->accept();;
 }
 
 void MainWindow::selectCamera(bool checked)

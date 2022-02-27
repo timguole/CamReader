@@ -14,9 +14,12 @@ VideoPreview::VideoPreview(QWidget *parent)
     , yPressed(0)
     , imageWidth(0)
     , imageHeight(0)
+    , scaleWidth(0)
+    , scaleHeight(0)
+    , fitWidth(0)
+    , fitHeight(0)
 {
-    scaleWidth = width();
-    scaleHeight = height();
+
 }
 
 void VideoPreview::paintEvent(QPaintEvent *event)
@@ -37,8 +40,13 @@ void VideoPreview::paintEvent(QPaintEvent *event)
         yRect = 0; // reset
         imageWidth = image.width();
         imageHeight = image.height();
-        scaleWidth = width();
-        scaleHeight = height();
+
+        // the frame aspect ratio may change,
+        // so reset scale values and 'fit' values;
+        scaleWidth = 0;
+        scaleHeight = 0;
+        fitWidth = 0;
+        fitHeight = 0;
     }
 
     // scale image and display visible rectangle of image.
@@ -49,8 +57,19 @@ void VideoPreview::paintEvent(QPaintEvent *event)
     // we scale the image
     if (((image.width() != scaleWidth)
             || (image.height() != scaleHeight))) {
-        image = image.scaled(QSize(scaleWidth, scaleHeight),
+        if (scaleWidth == 0) {
+            image = image.scaled(QSize(width(), height()),
                                    Qt::KeepAspectRatio);
+        } else {
+            image = image.scaled(QSize(scaleWidth, scaleHeight),
+                                   Qt::KeepAspectRatio);
+        }
+    }
+    if (fitWidth == 0) {
+        fitWidth = image.width();
+        fitHeight = image.height();
+        scaleWidth = image.width();
+        scaleHeight = image.height();
     }
 
     int wRect = image.width() > ww ? ww : image.width();
@@ -61,11 +80,13 @@ void VideoPreview::paintEvent(QPaintEvent *event)
     // display it at the center of widget
     int x = 0;
     int y = 0;
-    if (scaleWidth < ww) {
-        x = (ww - scaleWidth) / 2;
+    int cw = croppedImage.width();
+    int ch = croppedImage.height();
+    if (cw < ww) {
+        x = (ww - cw) / 2;
     }
-    if (scaleHeight < wh) {
-        y = (wh - scaleHeight) / 2;
+    if (ch < wh) {
+        y = (wh - ch) / 2;
     }
 
     // if color inversion is set, do it
@@ -84,7 +105,13 @@ void VideoPreview::paintEvent(QPaintEvent *event)
             qDebug() << "not supported image format:" << image.format();
         }
     }
+
+    if ((cw < ww)
+            || (ch < wh)) {
+        painter.fillRect(0, 0, ww, wh, Qt::black);
+    }
     painter.drawImage(x, y, croppedImage);
+    event->accept();
 }
 
 int VideoPreview::getBBThreshold()
@@ -193,11 +220,14 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
     int xoffset = x - xPressed;
     int yoffset = y - yPressed;
 
-    if (((xRect - xoffset) >= 0)
+    if ((scaleWidth > width())
+            && ((xRect - xoffset) >= 0)
             && ((xRect - xoffset) <= (scaleWidth - width()))) {
         xRect -= xoffset;
+        qDebug() << xRect << scaleWidth << width();
     }
-    if (((yRect - yoffset) >= 0)
+    if ((scaleHeight > height())
+            && ((yRect - yoffset) >= 0)
             && ((yRect - yoffset) <= (scaleHeight - height()))) {
         yRect -= yoffset;
     }
@@ -208,26 +238,28 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
 
 void VideoPreview::resizeEvent(QResizeEvent *event)
 {
-    scaleWidth = event->size().width();
-    scaleHeight = event->size().height();
     updateVewportSize();
+    event->accept();
 }
 
 void VideoPreview::wheelEvent(QWheelEvent *we)
 {
     double factor = (we->angleDelta().y() > 0) ? 1.25 : 0.80;
-    scaleWidth *= factor;
-    scaleHeight *= factor;
+    int newsw = scaleWidth * factor;
+    int newsh = scaleHeight * factor;
+
+    // Avoid from scaling the image too large of too snall.
+    // we just need to check the value of width,
+    // because frame image is always in a reasonable aspect ratio
+    if ((newsw >= 320) && (newsw <= 8000)) {
+        scaleWidth = newsw;
+        scaleHeight = newsh;
+    }
     updateVewportSize();
 }
 
 void VideoPreview::updateVewportSize()
 {
-    scaleWidth = (scaleWidth < 320) ? 320 : scaleWidth;
-    scaleWidth = (scaleWidth > 8000) ? 8000 : scaleWidth;
-    scaleHeight = (scaleHeight < 180) ? 180 : scaleHeight;
-    scaleHeight = (scaleHeight > 4500) ? 4500 : scaleHeight;
-
     int xnewmax = scaleWidth - width();
     int ynewmax = scaleHeight - height();
     xRect = ((xRect > xnewmax) && (xnewmax > 0)) ? xnewmax : xRect;
