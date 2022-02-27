@@ -120,6 +120,7 @@ void MainWindow::setupContextmenu()
 void MainWindow::contextMenuEvent(QContextMenuEvent *event)
 {
     contextmenu.exec(QCursor::pos());
+    event->accept();
 }
 
 void MainWindow::selectCamera(bool checked)
@@ -216,8 +217,8 @@ void MainWindow::saveImage(bool checked)
     qDebug() << "file name:" << filename;
     source_image.save(filename);
     QMessageBox::information(this, "Capture & save image",
-        "Image file saved to:\n" + filename,
-        QMessageBox::Ok);
+         "Image file saved to:\n" + filename,
+         QMessageBox::Ok);
 }
 
 void MainWindow::setBBThreshold(int t)

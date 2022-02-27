@@ -39,12 +39,14 @@ private:
     volatile int blackboardThreshold;
     int xRect; // x of the image's visible rectangle
     int yRect; // y of the image's visible rectangle
-    int xPressed;
-    int yPressed;
-    int imageWidth;
-    int imageHeight;
+    int xPressed; // x value when mouse pressed
+    int yPressed; // y value when mouse pressed
+    int imageWidth; // original frame image width
+    int imageHeight; // original frame image height
     int scaleWidth;
     int scaleHeight;
+    int fitWidth;
+    int fitHeight;
 };
 
 #endif // VIDEOPREVIEW_H
