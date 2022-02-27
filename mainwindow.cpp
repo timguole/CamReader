@@ -93,6 +93,17 @@ void MainWindow::setupContextmenu()
     a3->setSeparator(true);
     contextmenu.addAction(a3);
 
+    // action: toggle full screen
+    actToggleFullScreen.setText("Toggle fullscreen");
+    actToggleFullScreen.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F));
+    contextmenu.addAction(&actToggleFullScreen);
+    QObject::connect(&actToggleFullScreen, SIGNAL(triggered(bool)),
+                     this, SLOT(toggleFullScreen(bool)));
+
+    QAction *a4 = new QAction();
+    a4->setSeparator(true);
+    contextmenu.addAction(a4);
+
     // action: exit
     actExit.setText("Exit");
     actExit.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
@@ -237,4 +248,10 @@ void MainWindow::grabFrame()
     source_image = pixmap.toImage();
     ui->viewfinder->setFrame(source_image);
     ui->viewfinder->update();
+}
+
+void MainWindow::toggleFullScreen(bool checked)
+{
+    setWindowState(windowState() ^ Qt::WindowFullScreen);
+
 }

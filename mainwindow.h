@@ -34,6 +34,9 @@ public slots:
     void setBBThreshold(int t);
     void grabFrame();
 
+private slots:
+    void toggleFullScreen(bool);
+
 protected:
     void contextMenuEvent(QContextMenuEvent *event);
 
@@ -54,6 +57,7 @@ private:
     QAction actToggleScale;
     QAction actSetBBThreshold;
     QAction actSelectCamera;
+    QAction actToggleFullScreen;
     QAction actExit;
 
     QMenu submenuBB; // sub menu for blackboard mode
