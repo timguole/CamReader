@@ -57,11 +57,7 @@ void VideoPreview::paintEvent(QPaintEvent *event)
     // we scale the image
     if (((image.width() != scaleWidth)
             || (image.height() != scaleHeight))) {
-<<<<<<< HEAD
         if (fitWidth == 0) {
-=======
-        if (scaleWidth == 0) {
->>>>>>> e27c4b80e681b7d9e10c30cfc157b8ea8272e9d1
             image = image.scaled(QSize(width(), height()),
                                    Qt::KeepAspectRatio);
         } else {
@@ -228,7 +224,6 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
             && ((xRect - xoffset) >= 0)
             && ((xRect - xoffset) <= (scaleWidth - width()))) {
         xRect -= xoffset;
-        qDebug() << xRect << scaleWidth << width();
     }
     if ((scaleHeight > height())
             && ((yRect - yoffset) >= 0)
@@ -242,11 +237,8 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
 
 void VideoPreview::resizeEvent(QResizeEvent *event)
 {
-<<<<<<< HEAD
     fitWidth = 0;
     fitHeight = 0;
-=======
->>>>>>> e27c4b80e681b7d9e10c30cfc157b8ea8272e9d1
     updateVewportSize();
     event->accept();
 }
