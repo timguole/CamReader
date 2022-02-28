@@ -119,24 +119,24 @@ int VideoPreview::getBBThreshold()
     return blackboardThreshold;
 }
 
-void VideoPreview::toggleInvertColor(bool checked)
+void VideoPreview::toggleInvertColor()
 {
     isInvertColor = !isInvertColor;
 }
 
-void VideoPreview::toggleResize(bool checked)
+void VideoPreview::toggleResize()
 {
     scaleWidth = (scaleWidth != imageWidth) ? imageWidth : fitWidth;
     scaleHeight = (scaleHeight != imageHeight) ? imageHeight : fitHeight;
     updateVewportSize();
 }
 
-void VideoPreview::toggleBB(bool checked)
+void VideoPreview::toggleBB()
 {
     isBloackBoard = !isBloackBoard;
 }
 
-void VideoPreview::toggleCurveBB(bool checked)
+void VideoPreview::toggleCurveBB()
 {
     isCutoff = !isCutoff;
 }
@@ -233,6 +233,12 @@ void VideoPreview::mouseMoveEvent(QMouseEvent *event)
     xPressed = x;
     yPressed = y;
     event->accept();
+}
+
+void VideoPreview::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    toggleResize();
+    event->accept();;
 }
 
 void VideoPreview::resizeEvent(QResizeEvent *event)

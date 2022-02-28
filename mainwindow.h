@@ -25,20 +25,20 @@ public:
     ~MainWindow();
 
 public slots:
-    void selectCamera(bool checked = false);
-    void setBBThreshold(bool checked = false);
+    void selectCamera();
+    void adjustBBThreshold();
     void setCamera();
-    void onExit(bool checked);
+    void onExit();
     void onError(const QString &msg);
-    void saveImage(bool checked);
+    void saveImage();
     void setBBThreshold(int t);
-    void grabFrame();
-
-private slots:
-    void toggleFullScreen(bool);
+    void updateFrame();
 
 protected:
     void contextMenuEvent(QContextMenuEvent *event);
+
+private slots:
+    void toggleFullScreen();
 
 private:
     void setupContextmenu();
@@ -50,18 +50,7 @@ private:
     DialogSelectCamera *dialog;
     DialogSetBBThreshold *dialogSetBBT;
     QTimer timer;
-
     QMenu contextmenu;
-    QAction actCaptureImage;
-    QAction actToggleInvertColor;
-    QAction actToggleScale;
-    QAction actSetBBThreshold;
-    QAction actSelectCamera;
-    QAction actToggleFullScreen;
-    QAction actExit;
-
     QMenu submenuBB; // sub menu for blackboard mode
-    QAction actToggleBB;
-    QAction actToggleCurveBB;
 };
 #endif // MAINWINDOW_H

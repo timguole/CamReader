@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     timer.setInterval(40);
-    QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(grabFrame()));
+    QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(updateFrame()));
 }
 
 MainWindow::~MainWindow()
@@ -41,41 +41,38 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupContextmenu()
 {
+    QAction *a;
     // action: capture image
-    actCaptureImage.setText("Capture image");
-    actCaptureImage.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Space));
-    contextmenu.addAction(&actCaptureImage);
-    QObject::connect(&actCaptureImage, SIGNAL(triggered(bool)),
-                     this, SLOT(saveImage(bool)));
+    a = contextmenu.addAction("Capture image",
+                          this, &MainWindow::saveImage,
+                          QKeySequence(Qt::CTRL + Qt::Key_Space));
+    addAction(a);
 
     QAction *a1 = new QAction();
     a1->setSeparator(true);
     contextmenu.addAction(a1);
 
     // action: toggle invert color
-    actToggleInvertColor.setText("Toggle invert color mode");
-    actToggleInvertColor.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_I));
-    contextmenu.addAction(&actToggleInvertColor);
-    QObject::connect(&actToggleInvertColor, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleInvertColor(bool)));
+    a = contextmenu.addAction("Toggle invert color mode",
+                          ui->viewfinder, &VideoPreview::toggleInvertColor,
+                          QKeySequence(Qt::CTRL + Qt::Key_I));
+    addAction(a);
 
     // action: toggle scale previewing image
-    actToggleScale.setText("Toggle resize frame");
-    actToggleScale.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_S));
-    contextmenu.addAction(&actToggleScale);
-    QObject::connect(&actToggleScale, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleResize(bool)));
+    a = contextmenu.addAction("Toggle resize frame",
+                          ui->viewfinder, &VideoPreview::toggleResize,
+                          QKeySequence(Qt::CTRL + Qt::Key_S));
+    addAction(a);
 
     // add blackboard submenu
     submenuBB.setTitle("Blackboard mode");
     contextmenu.addMenu(&submenuBB);
 
     // action: set blackboard threshold
-    actSetBBThreshold.setText("Adjust BB Threshold");
-    actSetBBThreshold.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_T));
-    contextmenu.addAction(&actSetBBThreshold);
-    QObject::connect(&actSetBBThreshold, SIGNAL(triggered(bool)),
-                     this, SLOT(setBBThreshold(bool)));
+    a = contextmenu.addAction("Adjust BB Threshold",
+                          this, &MainWindow::adjustBBThreshold,
+                          QKeySequence(Qt::CTRL + Qt::Key_T));
+    addAction(a);
 
 
     QAction *a2 = new QAction();
@@ -83,48 +80,42 @@ void MainWindow::setupContextmenu()
     contextmenu.addAction(a2);
 
     // action: select camera
-    actSelectCamera.setText("Change camera");
-    actSelectCamera.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_N));
-    contextmenu.addAction(&actSelectCamera);
-    QObject::connect(&actSelectCamera, SIGNAL(triggered(bool)),
-                     this, SLOT(selectCamera(bool)));
+    a = contextmenu.addAction("Change camera",
+                          this, &MainWindow::selectCamera,
+                          QKeySequence(Qt::CTRL + Qt::Key_N));
+    addAction(a);
 
     QAction *a3 = new QAction();
     a3->setSeparator(true);
     contextmenu.addAction(a3);
 
-    // action: toggle full screen
-    actToggleFullScreen.setText("Toggle fullscreen");
-    actToggleFullScreen.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F));
-    contextmenu.addAction(&actToggleFullScreen);
-    QObject::connect(&actToggleFullScreen, SIGNAL(triggered(bool)),
-                     this, SLOT(toggleFullScreen(bool)));
+    a = contextmenu.addAction("Toggle fullscreen",
+                          this, &MainWindow::toggleFullScreen,
+                          QKeySequence(Qt::CTRL + Qt::Key_F));
+    addAction(a);
 
     QAction *a4 = new QAction();
     a4->setSeparator(true);
     contextmenu.addAction(a4);
 
     // action: exit
-    actExit.setText("Exit");
-    actExit.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
-    contextmenu.addAction(&actExit);
-    QObject::connect(&actExit, SIGNAL(triggered(bool)),
-                     this, SLOT(onExit(bool)));
+    a = contextmenu.addAction("Exit",
+                          this, &MainWindow::onExit,
+                          QKeySequence(Qt::CTRL + Qt::Key_Q));
+    addAction(a);
 
     // blackboard submenu
     // action: toggle blackboard mode
-    actToggleBB.setText("Toggle blackboard mode");
-    actToggleBB.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_B));
-    submenuBB.addAction(&actToggleBB);
-    QObject::connect(&actToggleBB, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleBB(bool)));
+    a = submenuBB.addAction("Toggle blackboard mode",
+                        ui->viewfinder, &VideoPreview::toggleBB,
+                        QKeySequence(Qt::CTRL + Qt::Key_B));
+    addAction(a);
 
     // action: toggle curve blackboard
-    actToggleCurveBB.setText("Toggle curve blackboard");
-    actToggleCurveBB.setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
-    submenuBB.addAction(&actToggleCurveBB);
-    QObject::connect(&actToggleCurveBB, SIGNAL(triggered(bool)),
-                     ui->viewfinder, SLOT(toggleCurveBB(bool)));
+    a = submenuBB.addAction("Toggle curve blackboard",
+                        ui->viewfinder, &VideoPreview::toggleCurveBB,
+                        QKeySequence(Qt::CTRL + Qt::Key_C));
+    addAction(a);
 
 }
 
@@ -134,20 +125,20 @@ void MainWindow::contextMenuEvent(QContextMenuEvent *event)
     event->accept();
 }
 
-void MainWindow::selectCamera(bool checked)
+void MainWindow::selectCamera()
 {
     // Each time this dialog is launched,
     // we should query the latest camera list on system.
     cameraInfoList = QCameraInfo::availableCameras();
     for (QCameraInfo ci : cameraInfoList) {
-        qDebug() << "Found device: " << ci.deviceName();
+        qDebug() << "found device:" << ci.deviceName();
     }
 
     dialog->setCameraDevices(cameraInfoList);
     dialog->open();
 }
 
-void MainWindow::setBBThreshold(bool checked)
+void MainWindow::adjustBBThreshold()
 {
     dialogSetBBT->setCurrentThreshold(ui->viewfinder->getBBThreshold());
     dialogSetBBT->open();
@@ -156,10 +147,11 @@ void MainWindow::setBBThreshold(bool checked)
 void MainWindow::setCamera()
 {
     int index = dialog->getIndex();
-    qDebug() << "Index: " << index;
+
     if (index < 1) {
         return;
     }
+
     timer.stop();
 
     if (mycam != nullptr) {
@@ -168,12 +160,13 @@ void MainWindow::setCamera()
         mycam = nullptr;
     }
     QString devname = cameraInfoList.at(index - 1).deviceName();
+    qDebug() << "use device:" << devname;
     mycam = new V4L2Camera(devname);
     QObject::connect(mycam, SIGNAL(errored(const QString &)),
                      this, SLOT(onError(const QString&)));
     mycam->open();
     if (mycam->currentState() != V4L2Camera::CAM_STATE::OPENED) {
-        qDebug() << "Failed to open camera device";
+        qDebug() << "failed to open camera device";
         return;
     }
 
@@ -184,18 +177,17 @@ void MainWindow::setCamera()
             maxframe = ffsi;
         }
     }
-    qDebug() << "max frame:" << maxframe.width
+    qDebug() << "max frame size:" << maxframe.width
              << maxframe.height << maxframe.formatName;
     mycam->setFrameFSI(maxframe);
     mycam->turnOn();
     int frameinterval = maxframe.numerator * 1000 / maxframe.denominator;
     qDebug() << "frame rate:" << (1000 / frameinterval);
-    timer.stop();
     timer.setInterval(frameinterval);
     timer.start();
 }
 
-void MainWindow::onExit(bool checked)
+void MainWindow::onExit()
 {
     if (QMessageBox::Ok == QMessageBox::information(this, "Exit",
             "Do you really want to exit?", QMessageBox::Ok, QMessageBox::Cancel)) {
@@ -211,7 +203,7 @@ void MainWindow::onError(const QString &msg)
             QMessageBox::Ok);
 }
 
-void MainWindow::saveImage(bool checked)
+void MainWindow::saveImage()
 {
     if (source_image.isNull()) {
         QMessageBox::warning(this, "Failed to save image",
@@ -237,7 +229,7 @@ void MainWindow::setBBThreshold(int t)
     ui->viewfinder->setBBThreshold(t);
 }
 
-void MainWindow::grabFrame()
+void MainWindow::updateFrame()
 {
     if (mycam == nullptr) {
         qDebug() << "No camera device configured";
@@ -250,7 +242,7 @@ void MainWindow::grabFrame()
     ui->viewfinder->update();
 }
 
-void MainWindow::toggleFullScreen(bool checked)
+void MainWindow::toggleFullScreen()
 {
     setWindowState(windowState() ^ Qt::WindowFullScreen);
 

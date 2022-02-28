@@ -16,10 +16,10 @@ public:
     void setFrame(QImage &i);
 
 public slots:
-    void toggleInvertColor(bool);
-    void toggleResize(bool);
-    void toggleBB(bool);
-    void toggleCurveBB(bool);
+    void toggleInvertColor();
+    void toggleResize();
+    void toggleBB();
+    void toggleCurveBB();
 
 private:
     void blackboardRgba(QImage &image);
@@ -29,6 +29,7 @@ private:
     // override event handlers
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
     void wheelEvent(QWheelEvent *we);
     void resizeEvent(QResizeEvent *event);
 
